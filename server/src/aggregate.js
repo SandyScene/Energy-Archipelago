@@ -9,16 +9,43 @@ const dataDir = path.join(__dirname, '..', 'data');
 const nations = JSON.parse(fs.readFileSync(path.join(dataDir, 'nations.geojson'), 'utf-8'));
 const regions = JSON.parse(fs.readFileSync(path.join(dataDir, 'regions.geojson'), 'utf-8'));
 
-// Precompute each feature's bounding box once at startup. A cheap bbox check lets us
-// skip the expensive exact point-in-polygon test for the vast majority of features —
-// without this, aggregating regions (2.5k projects x 4.5k polygons, ~11M exact checks
-// per request) is slow enough to time out on Render's free tier.
-function withBbox(collection) {
-  return collection.features.map((feature) => ({ feature, bbox: turf.bbox(feature) }));
+// A single country/region feature can be a MultiPolygon with parts scattered
+// across the globe (e.g. the UK's 50 parts include Falklands, South Georgia,
+// etc. alongside the mainland). Bounding-boxing the *whole feature* would give
+// a box spanning most of the planet for these, making every point on Earth a
+// "candidate" and defeating the bbox prefilter entirely. Flattening into
+// single-polygon parts first — each with its own tight bbox — keeps the
+// prefilter meaningful regardless of how scattered a feature's territory is.
+const FALLBACK_PAD_DEGREES = 0.2; // roughly 20km at UK latitudes
+
+function withPartsIndex(collection) {
+  const parts = [];
+  collection.features.forEach((feature, parentIndex) => {
+    let flattened;
+    try {
+      flattened = turf.flatten(feature).features;
+    } catch {
+      flattened = [feature];
+    }
+    for (const part of flattened) {
+      try {
+        const [minX, minY, maxX, maxY] = turf.bbox(part);
+        parts.push({
+          parentIndex,
+          feature: part,
+          bbox: [minX, minY, maxX, maxY],
+          fallbackBbox: [minX - FALLBACK_PAD_DEGREES, minY - FALLBACK_PAD_DEGREES, maxX + FALLBACK_PAD_DEGREES, maxY + FALLBACK_PAD_DEGREES],
+        });
+      } catch {
+        // malformed geometry in source dataset; skip this part
+      }
+    }
+  });
+  return { features: collection.features, parts };
 }
 
-const nationsIndexed = withBbox(nations);
-const regionsIndexed = withBbox(regions);
+const nationsIndexed = withPartsIndex(nations);
+const regionsIndexed = withPartsIndex(regions);
 
 function pointInBbox(lng, lat, [minX, minY, maxX, maxY]) {
   return lng >= minX && lng <= maxX && lat >= minY && lat <= maxY;
@@ -47,28 +74,31 @@ function addProjectToStats(stats, project) {
 // Some project points sit just outside every polygon — usually a coastal or
 // harbour project falling in a gap left by a generalized/simplified coastline.
 // Rather than silently dropping them from every aggregate, snap each one to
-// whichever polygon is nearest. This only runs for the (rare) unmatched
-// leftovers, so it doesn't reintroduce the O(projects x polygons) cost the
-// bbox prefilter above exists to avoid.
-function findNearestFeatureIndex(point, indexed) {
-  let bestIndex = -1;
+// whichever nearby polygon part is nearest. Only parts whose padded bbox is
+// actually close to the point are considered, so a point with no genuinely
+// nearby coverage (e.g. a country this boundary set doesn't have regions for)
+// is left unmatched rather than force-assigned to whatever happens to be
+// least-far-away on the other side of the map.
+function findNearestParentIndex(lng, lat, point, parts) {
+  let bestParent = -1;
   let bestDistance = Infinity;
-  for (let i = 0; i < indexed.length; i++) {
+  for (const part of parts) {
+    if (!pointInBbox(lng, lat, part.fallbackBbox)) continue;
     try {
-      const distance = turf.pointToPolygonDistance(point, indexed[i].feature, { units: 'kilometers' });
+      const distance = turf.pointToPolygonDistance(point, part.feature, { units: 'kilometers' });
       if (distance < bestDistance) {
         bestDistance = distance;
-        bestIndex = i;
+        bestParent = part.parentIndex;
       }
     } catch {
       // malformed geometry in source dataset; skip
     }
   }
-  return bestIndex;
+  return bestParent;
 }
 
-function aggregateByBoundary(projects, indexed) {
-  const statsByFeatureIndex = indexed.map(() => emptyStats());
+function aggregateByBoundary(projects, { features, parts }) {
+  const statsByFeatureIndex = features.map(() => emptyStats());
   const unmatched = [];
 
   for (const project of projects) {
@@ -76,12 +106,11 @@ function aggregateByBoundary(projects, indexed) {
     const lat = project.latitude;
     const point = turf.point([lng, lat]);
     let matched = false;
-    for (let i = 0; i < indexed.length; i++) {
-      const { feature, bbox } = indexed[i];
-      if (!pointInBbox(lng, lat, bbox)) continue;
+    for (const part of parts) {
+      if (!pointInBbox(lng, lat, part.bbox)) continue;
       try {
-        if (turf.booleanPointInPolygon(point, feature)) {
-          addProjectToStats(statsByFeatureIndex[i], project);
+        if (turf.booleanPointInPolygon(point, part.feature)) {
+          addProjectToStats(statsByFeatureIndex[part.parentIndex], project);
           matched = true;
           break;
         }
@@ -89,17 +118,17 @@ function aggregateByBoundary(projects, indexed) {
         // malformed geometry in source dataset; skip
       }
     }
-    if (!matched) unmatched.push({ project, point });
+    if (!matched) unmatched.push({ project, lng, lat, point });
   }
 
-  for (const { project, point } of unmatched) {
-    const nearestIndex = findNearestFeatureIndex(point, indexed);
-    if (nearestIndex >= 0) addProjectToStats(statsByFeatureIndex[nearestIndex], project);
+  for (const { project, lng, lat, point } of unmatched) {
+    const parentIndex = findNearestParentIndex(lng, lat, point, parts);
+    if (parentIndex >= 0) addProjectToStats(statsByFeatureIndex[parentIndex], project);
   }
 
   return {
     type: 'FeatureCollection',
-    features: indexed.map(({ feature }, i) => ({
+    features: features.map((feature, i) => ({
       type: 'Feature',
       geometry: feature.geometry,
       properties: {
