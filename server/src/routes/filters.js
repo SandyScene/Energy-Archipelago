@@ -17,6 +17,7 @@ router.get('/', (req, res) => {
     regions: country ? distinctValues('region', 'AND country = ?', [country]) : distinctValues('region'),
     technologies: distinctValues('technology'),
     ventureTypes: distinctValues('venture_type'),
+    projectStages: distinctValues('project_stage'),
   });
 });
 

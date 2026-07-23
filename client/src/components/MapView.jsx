@@ -7,7 +7,7 @@ import { TECHNOLOGY_COLORS, TECHNOLOGY_ICON_EXPRESSION } from '../technologyConf
 import { loadPinIcons } from '../pinIcons';
 import FilterPanel from './FilterPanel';
 
-const EMPTY_FILTERS = { country: '', region: '', technology: '', ventureType: '' };
+const EMPTY_FILTERS = { country: '', region: '', technology: '', ventureType: '', projectStage: '' };
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
@@ -68,7 +68,7 @@ function pinPopupHTML(p) {
         ${p.venture_type ? `<span>Venture type</span><span>${escapeHtml(p.venture_type)}</span>` : ''}
         ${p.technology ? `<span>Technology</span><span>${escapeHtml(p.technology)}</span>` : ''}
         ${p.technology_detail ? `<span>Detail</span><span>${escapeHtml(p.technology_detail)}</span>` : ''}
-        ${p.capacity_mw != null ? `<span>Capacity</span><span>${numberOrDash(p.capacity_mw)} MW</span>` : ''}
+        ${p.capacity_mw != null ? `<span>Capacity</span><span>${numberOrDash(p.capacity_mw * 1000)} kW</span>` : ''}
         ${p.project_stage ? `<span>Stage</span><span>${escapeHtml(p.project_stage)}</span>` : ''}
         ${p.region ? `<span>Region</span><span>${escapeHtml(p.region)}</span>` : ''}
         ${p.country ? `<span>Country</span><span>${escapeHtml(p.country)}</span>` : ''}

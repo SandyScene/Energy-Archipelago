@@ -3,6 +3,7 @@ const FILTER_PARAM_TO_COLUMN = {
   region: 'region',
   technology: 'technology',
   ventureType: 'venture_type',
+  projectStage: 'project_stage',
 };
 
 export function buildProjectFilter(query) {

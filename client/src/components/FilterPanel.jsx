@@ -6,10 +6,13 @@ const FIELDS = [
   { key: 'region', label: 'Region', optionsKey: 'regions' },
   { key: 'technology', label: 'Technology', optionsKey: 'technologies' },
   { key: 'ventureType', label: 'Venture type', optionsKey: 'ventureTypes' },
+  { key: 'projectStage', label: 'Project stage', optionsKey: 'projectStages' },
 ];
 
+const EMPTY_FILTERS = { country: '', region: '', technology: '', ventureType: '', projectStage: '' };
+
 export default function FilterPanel({ filters, onChange }) {
-  const [options, setOptions] = useState({ countries: [], regions: [], technologies: [], ventureTypes: [] });
+  const [options, setOptions] = useState({ countries: [], regions: [], technologies: [], ventureTypes: [], projectStages: [] });
 
   useEffect(() => {
     fetchFilterOptions(filters.country).then(setOptions).catch(() => {});
@@ -33,7 +36,7 @@ export default function FilterPanel({ filters, onChange }) {
         {activeCount > 0 && (
           <button
             className="filter-clear-btn"
-            onClick={() => onChange({ country: '', region: '', technology: '', ventureType: '' })}
+            onClick={() => onChange(EMPTY_FILTERS)}
           >
             Clear
           </button>
