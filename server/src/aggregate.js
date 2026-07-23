@@ -9,6 +9,21 @@ const dataDir = path.join(__dirname, '..', 'data');
 const nations = JSON.parse(fs.readFileSync(path.join(dataDir, 'nations.geojson'), 'utf-8'));
 const regions = JSON.parse(fs.readFileSync(path.join(dataDir, 'regions.geojson'), 'utf-8'));
 
+// Precompute each feature's bounding box once at startup. A cheap bbox check lets us
+// skip the expensive exact point-in-polygon test for the vast majority of features —
+// without this, aggregating regions (2.5k projects x 4.5k polygons, ~11M exact checks
+// per request) is slow enough to time out on Render's free tier.
+function withBbox(collection) {
+  return collection.features.map((feature) => ({ feature, bbox: turf.bbox(feature) }));
+}
+
+const nationsIndexed = withBbox(nations);
+const regionsIndexed = withBbox(regions);
+
+function pointInBbox(lng, lat, [minX, minY, maxX, maxY]) {
+  return lng >= minX && lng <= maxX && lat >= minY && lat <= maxY;
+}
+
 function emptyStats() {
   return { projectCount: 0, totalCapacityMw: 0 };
 }
@@ -29,13 +44,16 @@ function addProjectToStats(stats, project) {
   }
 }
 
-function aggregateByBoundary(projects, boundaryCollection) {
-  const statsByFeatureIndex = boundaryCollection.features.map(() => emptyStats());
+function aggregateByBoundary(projects, indexed) {
+  const statsByFeatureIndex = indexed.map(() => emptyStats());
 
   for (const project of projects) {
-    const point = turf.point([project.longitude, project.latitude]);
-    for (let i = 0; i < boundaryCollection.features.length; i++) {
-      const feature = boundaryCollection.features[i];
+    const lng = project.longitude;
+    const lat = project.latitude;
+    const point = turf.point([lng, lat]);
+    for (let i = 0; i < indexed.length; i++) {
+      const { feature, bbox } = indexed[i];
+      if (!pointInBbox(lng, lat, bbox)) continue;
       try {
         if (turf.booleanPointInPolygon(point, feature)) {
           addProjectToStats(statsByFeatureIndex[i], project);
@@ -49,7 +67,7 @@ function aggregateByBoundary(projects, boundaryCollection) {
 
   return {
     type: 'FeatureCollection',
-    features: boundaryCollection.features.map((feature, i) => ({
+    features: indexed.map(({ feature }, i) => ({
       type: 'Feature',
       geometry: feature.geometry,
       properties: {
@@ -61,9 +79,9 @@ function aggregateByBoundary(projects, boundaryCollection) {
 }
 
 export function aggregateNations(projects) {
-  return aggregateByBoundary(projects, nations);
+  return aggregateByBoundary(projects, nationsIndexed);
 }
 
 export function aggregateRegions(projects) {
-  return aggregateByBoundary(projects, regions);
+  return aggregateByBoundary(projects, regionsIndexed);
 }

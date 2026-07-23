@@ -95,7 +95,7 @@ export default function MapView() {
     let cancelled = false;
     let retryTimer = null;
 
-    async function loadAll() {
+    async function loadAll(attempt = 0) {
       try {
         const [projects, nations, regions] = await Promise.all([
           fetchProjects(filters),
@@ -110,8 +110,11 @@ export default function MapView() {
         map.getSource('regions')?.setData(regions);
       } catch (err) {
         if (cancelled) return;
-        console.error('Failed to load map data, retrying in 5s:', err);
-        retryTimer = setTimeout(loadAll, 5000);
+        // Exponential backoff (5s, 10s, 20s... capped at 60s) so a struggling API isn't
+        // hammered with retries on top of whatever is already slowing it down.
+        const delay = Math.min(5000 * 2 ** attempt, 60000);
+        console.error(`Failed to load map data, retrying in ${delay / 1000}s:`, err);
+        retryTimer = setTimeout(() => loadAll(attempt + 1), delay);
       }
     }
 
