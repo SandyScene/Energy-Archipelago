@@ -25,6 +25,7 @@ const COLUMN_ALIASES = {
   technologydetail: 'technology_detail',
   capacity: 'capacity_mw',
   capacitymw: 'capacity_mw',
+  capacitykw: 'capacity_kw',
   projectstage: 'project_stage',
   latitude: 'latitude',
   longitude: 'longitude',
@@ -32,7 +33,7 @@ const COLUMN_ALIASES = {
   region: 'region',
 };
 
-const NUMERIC_COLUMNS = new Set(['capacity_mw', 'latitude', 'longitude']);
+const NUMERIC_COLUMNS = new Set(['capacity_mw', 'capacity_kw', 'latitude', 'longitude']);
 
 const COLUMNS = [
   'date_of_data_source', 'project_name', 'lead_organisation', 'organisation_website',
@@ -59,6 +60,10 @@ function mapRow(rawRow, headerMap) {
       row[column] = String(value).trim();
     }
   }
+  if (row.capacity_mw == null && row.capacity_kw != null) {
+    row.capacity_mw = row.capacity_kw / 1000;
+  }
+  delete row.capacity_kw;
   return row;
 }
 
