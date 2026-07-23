@@ -1,0 +1,8 @@
+node_modules/
+dist/
+server/data/energy-archipelago.db
+server/server_out.log
+server/server_err.log
+server/server.pid
+.env
+.env.local
