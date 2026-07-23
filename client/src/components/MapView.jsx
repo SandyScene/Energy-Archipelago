@@ -94,6 +94,8 @@ export default function MapView() {
   }, [mapReady, filters]);
 
   useEffect(() => {
+    if (!MAPBOX_TOKEN) return;
+
     const map = new mapboxgl.Map({
       container: containerRef.current,
       style: MAP_STYLE,
@@ -243,6 +245,17 @@ export default function MapView() {
     region: 'Region polygons',
     pins: 'Individual project pins',
   }[band];
+
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className="map-shell">
+        <div className="map-config-error">
+          <strong>Map can't load: no Mapbox access token configured.</strong>
+          <p>Set <code>VITE_MAPBOX_TOKEN</code> as an environment variable wherever this is deployed, then rebuild.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="map-shell">
