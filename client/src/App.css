@@ -217,6 +217,36 @@
   font-weight: 500;
 }
 
+.ea-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e4e7;
+  font-size: 12px;
+  color: #333333;
+  font-weight: 600;
+}
+
+.ea-pager-btn {
+  border: 1px solid #2f855a;
+  background: #ffffff;
+  color: #1a6b3c;
+  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.ea-pager-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .filter-panel {
   position: absolute;
   top: 12px;

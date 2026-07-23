@@ -13,14 +13,35 @@ mapboxgl.accessToken = MAPBOX_TOKEN;
 
 const EMPTY_FC = { type: 'FeatureCollection', features: [] };
 
+// Projects that share an organisation and exact coordinates (e.g. several
+// technologies or project stages at one site) are the same physical pin —
+// group them so only one marker shows, with the popup paging through each.
+function groupProjectsByOrgAndLocation(projects) {
+  const groups = new Map();
+  const order = [];
+  projects.forEach((p, i) => {
+    const key = p.lead_organisation ? `${p.lead_organisation}|${p.latitude}|${p.longitude}` : `__ungrouped_${i}`;
+    if (!groups.has(key)) {
+      groups.set(key, []);
+      order.push(key);
+    }
+    groups.get(key).push(p);
+  });
+  return order.map((key) => groups.get(key));
+}
+
 function projectsToGeoJSON(projects) {
+  const groups = groupProjectsByOrgAndLocation(projects);
   return {
     type: 'FeatureCollection',
-    features: projects.map((p) => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [p.longitude, p.latitude] },
-      properties: p,
-    })),
+    features: groups.map((group) => {
+      const first = group[0];
+      return {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [first.longitude, first.latitude] },
+        properties: { technology: first.technology, projectsJson: JSON.stringify(group) },
+      };
+    }),
   };
 }
 
@@ -57,10 +78,19 @@ function polygonTooltipHTML(props) {
   `;
 }
 
-function pinPopupHTML(p) {
+function pinPopupHTML(projects, index) {
+  const p = projects[index];
   const website = p.organisation_website ? safeHref(p.organisation_website) : null;
+  const pager = projects.length > 1 ? `
+    <div class="ea-pager">
+      <button class="ea-pager-btn" data-dir="-1" ${index === 0 ? 'disabled' : ''} aria-label="Previous project">&#8249;</button>
+      <span>Project ${index + 1} of ${projects.length}</span>
+      <button class="ea-pager-btn" data-dir="1" ${index === projects.length - 1 ? 'disabled' : ''} aria-label="Next project">&#8250;</button>
+    </div>
+  ` : '';
   return `
     <div class="ea-tooltip ea-tooltip-pin">
+      ${pager}
       <strong>${escapeHtml(p.project_name)}</strong>
       ${p.lead_organisation ? `<div>${escapeHtml(p.lead_organisation)}${website ? ` — <a href="${escapeHtml(website)}" target="_blank" rel="noreferrer">website</a>` : ''}</div>` : ''}
       <div class="ea-tooltip-grid">
@@ -75,6 +105,18 @@ function pinPopupHTML(p) {
       </div>
     </div>
   `;
+}
+
+// Wires the popup's prev/next buttons, re-wiring on every render since
+// setHTML() replaces the popup's DOM (and any listeners attached to it).
+function renderPinPopup(popup, projects, index) {
+  popup.setHTML(pinPopupHTML(projects, index));
+  popup.getElement()?.querySelectorAll('.ea-pager-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const nextIndex = index + Number(btn.dataset.dir);
+      if (nextIndex >= 0 && nextIndex < projects.length) renderPinPopup(popup, projects, nextIndex);
+    });
+  });
 }
 
 export default function MapView() {
@@ -253,10 +295,9 @@ export default function MapView() {
       map.on('click', 'unclustered-point', (e) => {
         const feature = e.features?.[0];
         if (!feature) return;
-        new mapboxgl.Popup({ offset: 12 })
-          .setLngLat(e.lngLat)
-          .setHTML(pinPopupHTML(feature.properties))
-          .addTo(map);
+        const projects = JSON.parse(feature.properties.projectsJson);
+        const popup = new mapboxgl.Popup({ offset: 12 }).setLngLat(e.lngLat).addTo(map);
+        renderPinPopup(popup, projects, 0);
       });
 
       setBand(zoomBand(map.getZoom()));
