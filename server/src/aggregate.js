@@ -13,9 +13,20 @@ function emptyStats() {
   return { projectCount: 0, totalCapacityMw: 0 };
 }
 
+// Installed capacity should only reflect projects that are both built (operational)
+// and community owned — planned/under-construction and non-community-owned
+// projects still count toward projectCount but not toward totalCapacityMw.
+function isOperationalCommunityOwned(project) {
+  const stage = (project.project_stage || '').toLowerCase();
+  const venture = (project.venture_type || '').toLowerCase();
+  return stage.includes('operational') && venture.includes('community owned');
+}
+
 function addProjectToStats(stats, project) {
   stats.projectCount += 1;
-  stats.totalCapacityMw += Number(project.capacity_mw) || 0;
+  if (isOperationalCommunityOwned(project)) {
+    stats.totalCapacityMw += Number(project.capacity_mw) || 0;
+  }
 }
 
 function aggregateByBoundary(projects, boundaryCollection) {
