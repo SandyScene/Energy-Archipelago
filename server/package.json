@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "node src/index.js",
+    "start": "node scripts/startServer.js",
     "seed": "node scripts/seed.js",
     "import": "node scripts/importSpreadsheet.js"
   },
