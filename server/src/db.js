@@ -27,3 +27,17 @@ db.exec(`
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
 `);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS data_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    organisation_name TEXT NOT NULL,
+    organisation_type TEXT NOT NULL,
+    data_use TEXT NOT NULL,
+    comments TEXT,
+    country TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+`);

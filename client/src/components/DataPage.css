@@ -113,12 +113,6 @@
   color: rgba(245, 247, 250, 0.9);
 }
 
-.data-note {
-  font-size: 12px;
-  opacity: 0.6;
-  font-style: italic;
-}
-
 .data-licence {
   padding-top: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);

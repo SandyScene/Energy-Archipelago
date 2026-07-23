@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchFilterOptions, fetchProjects } from '../api';
+import { fetchFilterOptions, fetchProjects, submitDataRequest } from '../api';
 import './DataPage.css';
 
 const ORGANISATION_TYPES = ['Community Organisation', '3rd Sector', 'University', 'Private Company'];
@@ -75,6 +75,15 @@ export default function DataPage() {
     setDownloading(true);
     setError('');
     try {
+      await submitDataRequest({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        organisation_name: form.organisationName.trim(),
+        organisation_type: form.organisationType,
+        data_use: form.dataUse,
+        comments: form.comments.trim(),
+        country,
+      });
       const projects = await fetchProjects({ country });
       const csv = toCSV(projects);
       const filename = `energy-archipelago-${country.toLowerCase().replace(/\s+/g, '-')}.csv`;
@@ -164,13 +173,8 @@ export default function DataPage() {
             include the following statement:
           </p>
           <blockquote>
-            "Data sourced from Energy Archipelago, a project led by Scene
-            (energyarchipelago.com / scene.community)."
+            "Data sourced from Energy Archipelago, a project led by Scene Connect Ltd."
           </blockquote>
-          <p className="data-note">
-            (Draft wording — confirm this is the exact citation Scene wants used before
-            publishing it externally.)
-          </p>
         </section>
 
         <section className="data-section data-licence">

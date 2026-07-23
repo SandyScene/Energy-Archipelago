@@ -29,3 +29,11 @@ export function fetchAggregates(level, filters) {
 export function fetchFilterOptions(country) {
   return fetch(`${API_BASE}/api/filters${queryString({ country })}`).then(handle);
 }
+
+export function submitDataRequest(payload) {
+  return fetch(`${API_BASE}/api/data-requests`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then(handle);
+}
