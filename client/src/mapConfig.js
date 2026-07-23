@@ -7,7 +7,7 @@ export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 export const MAP_STYLE = 'mapbox://styles/mapbox/light-v11';
 
-export const INITIAL_VIEW = { center: [0, 20], zoom: 2 };
+export const INITIAL_VIEW = { center: [15, 50], zoom: 3.5 };
 
 export function zoomBand(zoom) {
   if (zoom < ZOOM_BREAKS.nationMax) return 'nation';

@@ -12,7 +12,9 @@ function Header() {
       <nav className="app-header-nav">
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>Map</NavLink>
         <NavLink to="/about" end className={({ isActive }) => (isActive ? 'active' : '')}>About</NavLink>
-        <img src="/Scene-logo.png" alt="Scene" className="app-header-scene-logo" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+        <a href="https://www.scene.community" target="_blank" rel="noreferrer" className="app-header-scene-link">
+          <img src="/Scene-logo.png" alt="Scene" className="app-header-scene-logo" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+        </a>
       </nav>
     </header>
   );

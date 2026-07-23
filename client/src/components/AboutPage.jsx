@@ -1,8 +1,38 @@
 import './AboutPage.css';
 
+const CONTACT_HREF = 'mailto:sandy.r@scene.community?subject=Energy%20Archipelago%20partnership';
+
+function ContactButton({ className = 'about-contact-btn' }) {
+  return (
+    <a className={className} href={CONTACT_HREF}>
+      Get in touch about partnering
+    </a>
+  );
+}
+
 export default function AboutPage() {
   return (
     <div className="about-page">
+      <section className="about-hero">
+        <a href="https://www.scene.community" target="_blank" rel="noreferrer" className="about-hero-scene-link">
+          <img
+            src="/Scene-logo.png"
+            alt="Scene"
+            className="about-hero-scene-logo"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+        </a>
+        <h1>A partnership opportunity with Scene</h1>
+        <p>
+          Energy Archipelago is led by{' '}
+          <a href="https://www.scene.community" target="_blank" rel="noreferrer">Scene</a>, a social
+          enterprise for local energy futures, with Sandy Robinson as project lead. We're looking
+          for partner organisations — community energy networks, research institutions and public
+          bodies — to help build a shared, open evidence base for the sector.
+        </p>
+        <ContactButton className="about-contact-btn about-contact-btn-hero" />
+      </section>
+
       <section className="about-section">
         <h2>What is Energy Archipelago?</h2>
         <p>
@@ -29,18 +59,19 @@ export default function AboutPage() {
       </section>
 
       <section className="about-section">
-        <h2>Project lead: Scene</h2>
+        <h2>Lead organisation: Scene</h2>
         <p>
-          Energy Archipelago is led by <a href="https://www.scene.community" target="_blank" rel="noreferrer">Scene</a>,
-          a social enterprise for local energy futures. Scene supports the low-carbon transition by
+          <a href="https://www.scene.community" target="_blank" rel="noreferrer">Scene</a> is a
+          social enterprise for local energy futures. Scene supports the low-carbon transition by
           promoting community energy innovation and ownership, through research, consultancy and
           product development — helping local communities participate in, and benefit from, the
-          shift to renewable and low-carbon energy.
+          shift to renewable and low-carbon energy. Scene leads Energy Archipelago and is actively
+          seeking partner organisations to help grow and govern it.
         </p>
       </section>
 
       <section className="about-section">
-        <h2>Project creator: Sandy Robinson</h2>
+        <h2>Project lead: Sandy Robinson</h2>
         <div className="about-person">
           <img
             src="/Sandy-robinson.png"
@@ -73,7 +104,7 @@ export default function AboutPage() {
       </section>
 
       <section className="about-section">
-        <h2>Partner organisations</h2>
+        <h2>Partner with us</h2>
         <p>
           Energy Archipelago grows through partnerships with community energy networks, research
           institutions and public bodies who can contribute data, local knowledge, or reach into
@@ -81,9 +112,7 @@ export default function AboutPage() {
           organisation a direct line to shaping a shared, open evidence base for the sector —
           rather than everyone maintaining their own disconnected spreadsheets.
         </p>
-        <a className="about-contact-btn" href="mailto:sandy.r@scene.community?subject=Energy%20Archipelago%20partnership">
-          Get in touch about partnering
-        </a>
+        <ContactButton />
       </section>
     </div>
   );

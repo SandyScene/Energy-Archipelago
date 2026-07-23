@@ -31,6 +31,11 @@
   gap: 20px;
 }
 
+.app-header-scene-link {
+  display: flex;
+  align-items: center;
+}
+
 .app-header-scene-logo {
   height: 36px;
   width: auto;
