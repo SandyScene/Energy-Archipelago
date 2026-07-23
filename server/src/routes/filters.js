@@ -13,7 +13,7 @@ function distinctValues(column) {
 router.get('/', (req, res) => {
   res.json({
     countries: distinctValues('country'),
-    regions: distinctValues('region_level_1'),
+    regions: distinctValues('region'),
     technologies: distinctValues('technology'),
     ventureTypes: distinctValues('venture_type'),
   });

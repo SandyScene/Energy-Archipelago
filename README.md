@@ -56,8 +56,11 @@ cd server
 npm run import -- path/to/your-spreadsheet.xlsx   # or .csv
 ```
 
-Rows missing a project name, latitude, or longitude are skipped. Re-running
-the import does not de-duplicate existing rows.
+Rows missing a project name, latitude, or longitude are skipped. Each row's
+`ID` column controls insert vs. update: a blank ID inserts a new project; an
+ID matching an existing project updates it in place. New rows are assigned an
+ID on insert — the script prints these at the end so you can copy them back
+into the master spreadsheet's ID column for future re-imports.
 
 To insert one example project for testing:
 
@@ -120,10 +123,11 @@ server/
 
 ## Data fields
 
-Each project record has: date of data source, project name, primary
-organisation and type, technology, venture type, total project capacity (MW),
-estimated annual generation (MWh), project stage, latitude/longitude, country,
-and region.
+Each project record has: ID (hidden, auto-assigned), date of data source
+(hidden), project name, lead organisation, organisation website, organisation
+type, venture type, technology, technology detail, capacity (MW), project
+stage, latitude/longitude, country, and region. "Hidden" fields are stored
+but not shown on the map's pin popup.
 
 ## Credits
 

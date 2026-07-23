@@ -1,4 +1,4 @@
-Date of Data Source,Project Name,Primary Organisation,Primary Organisation Type,Technology,Venture Type,Total Project Capacity,Estimated Annual Generation (MWh),Project Stage,Latitude,Longitude,Country,Region Level 1
-2026-01-15,Ardrossan Community Wind Turbine,Ardrossan Renewable Energy Cooperative,Community Cooperative,Wind,Community Owned,0.9,2100,Operational,55.6431,-4.8092,United Kingdom,Scotland
-2026-02-01,Riverside Community Solar Farm,Riverside Energy Cooperative,Community Cooperative,Solar,Community Owned,4.2,4500,Operational,52.9548,-1.1581,United Kingdom,East Midlands
-2026-02-10,Glen Valley Hydro Scheme,Glen Valley Energy Group,Community Benefit Society,Hydro,Community Benefit / Shared Ownership,0.5,1900,Construction,56.8198,-5.1052,United Kingdom,Highlands
+ID,Date Data Source,Project Name,Lead Organisation,Organisation Website,Organisation Type,Venture Type,Technology,Technology Detail,Capacity,Project Stage,Latitude,Longitude,Country,Region
+,2026-01-15,Ardrossan Community Wind Turbine,Ardrossan Renewable Energy Cooperative,https://example.org/ardrossan-energy-coop,Community Cooperative,Community Owned,Wind,Single onshore turbine,0.9,Operational,55.6431,-4.8092,United Kingdom,Scotland
+,2026-02-01,Riverside Community Solar Farm,Riverside Energy Cooperative,https://example.org/riverside-energy,Community Cooperative,Community Owned,Solar,Ground-mounted PV array,4.2,Operational,52.9548,-1.1581,United Kingdom,East Midlands
+,2026-02-10,Glen Valley Hydro Scheme,Glen Valley Energy Group,https://example.org/glen-valley-energy,Community Benefit Society,Community Benefit / Shared Ownership,Hydro,Run-of-river hydro,0.5,Construction,56.8198,-5.1052,United Kingdom,Highlands

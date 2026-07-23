@@ -10,13 +10,12 @@ const nations = JSON.parse(fs.readFileSync(path.join(dataDir, 'nations.geojson')
 const regions = JSON.parse(fs.readFileSync(path.join(dataDir, 'regions.geojson'), 'utf-8'));
 
 function emptyStats() {
-  return { projectCount: 0, totalCapacityMw: 0, totalGenerationMwh: 0 };
+  return { projectCount: 0, totalCapacityMw: 0 };
 }
 
 function addProjectToStats(stats, project) {
   stats.projectCount += 1;
-  stats.totalCapacityMw += Number(project.total_project_capacity_mw) || 0;
-  stats.totalGenerationMwh += Number(project.generation_capacity_mwh) || 0;
+  stats.totalCapacityMw += Number(project.capacity_mw) || 0;
 }
 
 function aggregateByBoundary(projects, boundaryCollection) {

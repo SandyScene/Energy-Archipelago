@@ -10,25 +10,26 @@ if (existing) {
 }
 
 const COLUMNS = [
-  'date_of_data_source', 'project_name', 'primary_organisation', 'primary_organisation_type',
-  'technology', 'venture_type', 'total_project_capacity_mw', 'generation_capacity_mwh',
-  'project_stage', 'latitude', 'longitude', 'country', 'region_level_1',
+  'date_of_data_source', 'project_name', 'lead_organisation', 'organisation_website',
+  'organisation_type', 'venture_type', 'technology', 'technology_detail', 'capacity_mw',
+  'project_stage', 'latitude', 'longitude', 'country', 'region',
 ];
 
 const example = {
   date_of_data_source: '2026-01-15',
   project_name: 'Ardrossan Community Wind Turbine',
-  primary_organisation: 'Ardrossan Renewable Energy Cooperative',
-  primary_organisation_type: 'Community Cooperative',
-  technology: 'Wind',
+  lead_organisation: 'Ardrossan Renewable Energy Cooperative',
+  organisation_website: 'https://example.org/ardrossan-energy-coop',
+  organisation_type: 'Community Cooperative',
   venture_type: 'Community Owned',
-  total_project_capacity_mw: 0.9,
-  generation_capacity_mwh: 2100,
+  technology: 'Wind',
+  technology_detail: 'Single onshore turbine, 900kW',
+  capacity_mw: 0.9,
   project_stage: 'Operational',
   latitude: 55.6431,
   longitude: -4.8092,
   country: 'United Kingdom',
-  region_level_1: 'Scotland',
+  region: 'Scotland',
 };
 
 const placeholders = COLUMNS.map(() => '?').join(', ');

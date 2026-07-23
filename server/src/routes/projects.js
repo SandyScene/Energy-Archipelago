@@ -9,17 +9,18 @@ const REQUIRED_FIELDS = ['project_name', 'latitude', 'longitude'];
 const COLUMNS = [
   'date_of_data_source',
   'project_name',
-  'primary_organisation',
-  'primary_organisation_type',
-  'technology',
+  'lead_organisation',
+  'organisation_website',
+  'organisation_type',
   'venture_type',
-  'total_project_capacity_mw',
-  'generation_capacity_mwh',
+  'technology',
+  'technology_detail',
+  'capacity_mw',
   'project_stage',
   'latitude',
   'longitude',
   'country',
-  'region_level_1',
+  'region',
 ];
 
 router.get('/', (req, res) => {
@@ -54,7 +55,7 @@ router.post('/', (req, res) => {
   const values = COLUMNS.map((col) => {
     if (col === 'latitude') return lat;
     if (col === 'longitude') return lng;
-    if (col === 'total_project_capacity_mw' || col === 'generation_capacity_mwh') {
+    if (col === 'capacity_mw') {
       return body[col] === undefined || body[col] === '' ? null : Number(body[col]);
     }
     return body[col] ?? null;

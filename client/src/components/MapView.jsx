@@ -29,31 +29,49 @@ function numberOrDash(n, digits = 1) {
   return Number(n).toLocaleString(undefined, { maximumFractionDigits: digits });
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function safeHref(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
 function polygonTooltipHTML(props) {
   const title = props.admin && props.admin !== props.name ? `${props.name}, ${props.admin}` : props.name;
   return `
     <div class="ea-tooltip">
-      <strong>${title}</strong>
+      <strong>${escapeHtml(title)}</strong>
       <div>Projects: ${numberOrDash(props.projectCount, 0)}</div>
       <div>Installed capacity: ${numberOrDash(props.totalCapacityMw)} MW</div>
-      <div>Est. generation: ${numberOrDash(props.totalGenerationMwh, 0)} MWh/yr</div>
     </div>
   `;
 }
 
 function pinPopupHTML(p) {
+  const website = p.organisation_website ? safeHref(p.organisation_website) : null;
   return `
     <div class="ea-tooltip ea-tooltip-pin">
-      <strong>${p.project_name}</strong>
-      ${p.primary_organisation ? `<div>${p.primary_organisation}</div>` : ''}
+      <strong>${escapeHtml(p.project_name)}</strong>
+      ${p.lead_organisation ? `<div>${escapeHtml(p.lead_organisation)}${website ? ` — <a href="${escapeHtml(website)}" target="_blank" rel="noreferrer">website</a>` : ''}</div>` : ''}
       <div class="ea-tooltip-grid">
-        ${p.technology ? `<span>Technology</span><span>${p.technology}</span>` : ''}
-        ${p.venture_type ? `<span>Venture type</span><span>${p.venture_type}</span>` : ''}
-        ${p.total_project_capacity_mw != null ? `<span>Capacity</span><span>${numberOrDash(p.total_project_capacity_mw)} MW</span>` : ''}
-        ${p.generation_capacity_mwh != null ? `<span>Generation</span><span>${numberOrDash(p.generation_capacity_mwh, 0)} MWh/yr</span>` : ''}
-        ${p.project_stage ? `<span>Stage</span><span>${p.project_stage}</span>` : ''}
-        ${p.region_level_1 ? `<span>Region</span><span>${p.region_level_1}</span>` : ''}
-        ${p.country ? `<span>Country</span><span>${p.country}</span>` : ''}
+        ${p.organisation_type ? `<span>Org type</span><span>${escapeHtml(p.organisation_type)}</span>` : ''}
+        ${p.venture_type ? `<span>Venture type</span><span>${escapeHtml(p.venture_type)}</span>` : ''}
+        ${p.technology ? `<span>Technology</span><span>${escapeHtml(p.technology)}</span>` : ''}
+        ${p.technology_detail ? `<span>Detail</span><span>${escapeHtml(p.technology_detail)}</span>` : ''}
+        ${p.capacity_mw != null ? `<span>Capacity</span><span>${numberOrDash(p.capacity_mw)} MW</span>` : ''}
+        ${p.project_stage ? `<span>Stage</span><span>${escapeHtml(p.project_stage)}</span>` : ''}
+        ${p.region ? `<span>Region</span><span>${escapeHtml(p.region)}</span>` : ''}
+        ${p.country ? `<span>Country</span><span>${escapeHtml(p.country)}</span>` : ''}
       </div>
     </div>
   `;

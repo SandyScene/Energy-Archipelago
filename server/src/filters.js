@@ -1,6 +1,6 @@
 const FILTER_PARAM_TO_COLUMN = {
   country: 'country',
-  region: 'region_level_1',
+  region: 'region',
   technology: 'technology',
   ventureType: 'venture_type',
 };
