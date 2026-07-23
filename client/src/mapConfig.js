@@ -1,6 +1,7 @@
 export const ZOOM_BREAKS = {
   nationMax: 5,
-  regionMax: 8,
+  regionMax: 7,
+  councilMax: 8,
 };
 
 export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -12,6 +13,7 @@ export const INITIAL_VIEW = { center: [15, 50], zoom: 3.5 };
 export function zoomBand(zoom) {
   if (zoom < ZOOM_BREAKS.nationMax) return 'nation';
   if (zoom < ZOOM_BREAKS.regionMax) return 'region';
+  if (zoom < ZOOM_BREAKS.councilMax) return 'council';
   return 'pins';
 }
 

@@ -139,10 +139,11 @@ export default function MapView() {
 
     async function loadAll(attempt = 0) {
       try {
-        const [projects, nations, regions] = await Promise.all([
+        const [projects, nations, regions, councils] = await Promise.all([
           fetchProjects(filters),
           fetchAggregates('nation', filters),
           fetchAggregates('region', filters),
+          fetchAggregates('council', filters),
         ]);
         if (cancelled) return;
         const map = mapRef.current;
@@ -150,6 +151,7 @@ export default function MapView() {
         map.getSource('projects')?.setData(projectsToGeoJSON(projects));
         map.getSource('nations')?.setData(nations);
         map.getSource('regions')?.setData(regions);
+        map.getSource('councils')?.setData(councils);
       } catch (err) {
         if (cancelled) return;
         // Exponential backoff (5s, 10s, 20s... capped at 60s) so a struggling API isn't
@@ -194,6 +196,7 @@ export default function MapView() {
 
       map.addSource('nations', { type: 'geojson', data: EMPTY_FC });
       map.addSource('regions', { type: 'geojson', data: EMPTY_FC });
+      map.addSource('councils', { type: 'geojson', data: EMPTY_FC });
       map.addSource('projects', {
         type: 'geojson',
         data: EMPTY_FC,
@@ -225,8 +228,19 @@ export default function MapView() {
       });
 
       map.addLayer({
+        id: 'councils-fill', type: 'fill', source: 'councils',
+        minzoom: ZOOM_BREAKS.regionMax, maxzoom: ZOOM_BREAKS.councilMax,
+        paint: { 'fill-color': CHOROPLETH_FILL_COLOR, 'fill-opacity': CHOROPLETH_OPACITY },
+      });
+      map.addLayer({
+        id: 'councils-outline', type: 'line', source: 'councils',
+        minzoom: ZOOM_BREAKS.regionMax, maxzoom: ZOOM_BREAKS.councilMax,
+        paint: { 'line-color': '#4a5568', 'line-width': 0.5 },
+      });
+
+      map.addLayer({
         id: 'clusters', type: 'circle', source: 'projects',
-        minzoom: ZOOM_BREAKS.regionMax,
+        minzoom: ZOOM_BREAKS.councilMax,
         filter: ['has', 'point_count'],
         paint: {
           'circle-color': ['step', ['get', 'point_count'], '#8fd0aa', 10, '#39a86b', 50, '#0f7a45'],
@@ -237,7 +251,7 @@ export default function MapView() {
       });
       map.addLayer({
         id: 'cluster-count', type: 'symbol', source: 'projects',
-        minzoom: ZOOM_BREAKS.regionMax,
+        minzoom: ZOOM_BREAKS.councilMax,
         filter: ['has', 'point_count'],
         layout: {
           'text-field': ['get', 'point_count_abbreviated'],
@@ -248,7 +262,7 @@ export default function MapView() {
       });
       map.addLayer({
         id: 'unclustered-point', type: 'symbol', source: 'projects',
-        minzoom: ZOOM_BREAKS.regionMax,
+        minzoom: ZOOM_BREAKS.councilMax,
         filter: ['!', ['has', 'point_count']],
         layout: {
           'icon-image': TECHNOLOGY_ICON_EXPRESSION,
@@ -259,7 +273,7 @@ export default function MapView() {
         },
       });
 
-      ['nations-fill', 'regions-fill'].forEach((layerId) => {
+      ['nations-fill', 'regions-fill', 'councils-fill'].forEach((layerId) => {
         map.on('mousemove', layerId, (e) => {
           map.getCanvas().style.cursor = 'pointer';
           const feature = e.features?.[0];
@@ -316,6 +330,7 @@ export default function MapView() {
   const bandLabel = {
     nation: 'Nation polygons',
     region: 'Region polygons',
+    council: 'Council area polygons',
     pins: 'Individual project pins',
   }[band];
 

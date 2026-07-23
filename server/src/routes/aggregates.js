@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db.js';
-import { aggregateNations, aggregateRegions } from '../aggregate.js';
+import { aggregateNations, aggregateRegions, aggregateCouncils } from '../aggregate.js';
 import { buildProjectFilter } from '../filters.js';
 
 const router = Router();
@@ -8,6 +8,7 @@ const router = Router();
 const LEVEL_HANDLERS = {
   nation: aggregateNations,
   region: aggregateRegions,
+  council: aggregateCouncils,
 };
 
 router.get('/:level', (req, res) => {

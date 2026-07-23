@@ -8,6 +8,7 @@ const dataDir = path.join(__dirname, '..', 'data');
 
 const nations = JSON.parse(fs.readFileSync(path.join(dataDir, 'nations.geojson'), 'utf-8'));
 const regions = JSON.parse(fs.readFileSync(path.join(dataDir, 'regions.geojson'), 'utf-8'));
+const councils = JSON.parse(fs.readFileSync(path.join(dataDir, 'councils.geojson'), 'utf-8'));
 
 // A single country/region feature can be a MultiPolygon with parts scattered
 // across the globe (e.g. the UK's 50 parts include Falklands, South Georgia,
@@ -46,6 +47,7 @@ function withPartsIndex(collection) {
 
 const nationsIndexed = withPartsIndex(nations);
 const regionsIndexed = withPartsIndex(regions);
+const councilsIndexed = withPartsIndex(councils);
 
 function pointInBbox(lng, lat, [minX, minY, maxX, maxY]) {
   return lng >= minX && lng <= maxX && lat >= minY && lat <= maxY;
@@ -55,18 +57,23 @@ function emptyStats() {
   return { projectCount: 0, totalCapacityMw: 0 };
 }
 
-// Installed capacity should only reflect projects that are both built (operational)
-// and community owned — planned/under-construction and non-community-owned
-// projects still count toward projectCount but not toward totalCapacityMw.
-function isOperationalCommunityOwned(project) {
+// Installed capacity should only reflect projects that are actually built
+// (operational) — planned/under-construction projects still count toward
+// projectCount but not toward totalCapacityMw. Deliberately not gated on
+// venture type: ownership structure is unrecorded ("Unknown") for ~80% of
+// the dataset (entire countries in the older international data have no
+// venture type at all), so requiring "community owned" here made totals
+// read as zero for most of the map even though real operational capacity
+// exists. Users who want the community-owned-only view can already get it
+// via the venture type filter, which applies to this same aggregate.
+function isOperational(project) {
   const stage = (project.project_stage || '').toLowerCase();
-  const venture = (project.venture_type || '').toLowerCase();
-  return stage.includes('operational') && venture.includes('community owned');
+  return stage.includes('operational');
 }
 
 function addProjectToStats(stats, project) {
   stats.projectCount += 1;
-  if (isOperationalCommunityOwned(project)) {
+  if (isOperational(project)) {
     stats.totalCapacityMw += Number(project.capacity_mw) || 0;
   }
 }
@@ -145,4 +152,8 @@ export function aggregateNations(projects) {
 
 export function aggregateRegions(projects) {
   return aggregateByBoundary(projects, regionsIndexed);
+}
+
+export function aggregateCouncils(projects) {
+  return aggregateByBoundary(projects, councilsIndexed);
 }
