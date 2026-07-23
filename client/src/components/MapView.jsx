@@ -73,7 +73,8 @@ function polygonTooltipHTML(props) {
     <div class="ea-tooltip">
       <strong>${escapeHtml(title)}</strong>
       <div>Projects: ${numberOrDash(props.projectCount, 0)}</div>
-      <div>Installed capacity: ${numberOrDash(props.totalCapacityMw)} MW</div>
+      <div>Electricity capacity: ${numberOrDash(props.totalElectricityCapacityMw)} MW</div>
+      <div>Heat capacity: ${numberOrDash(props.totalHeatCapacityMw)} MW</div>
     </div>
   `;
 }

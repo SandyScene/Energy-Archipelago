@@ -18,7 +18,7 @@ router.get('/:level', (req, res) => {
   }
   const { where, params } = buildProjectFilter(req.query);
   const projects = db
-    .prepare(`SELECT latitude, longitude, capacity_mw, project_stage, venture_type FROM projects ${where}`)
+    .prepare(`SELECT latitude, longitude, capacity_mw, project_stage, venture_type, technology, technology_detail FROM projects ${where}`)
     .all(...params);
   res.json(handler(projects));
 });

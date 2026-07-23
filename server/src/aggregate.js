@@ -54,12 +54,12 @@ function pointInBbox(lng, lat, [minX, minY, maxX, maxY]) {
 }
 
 function emptyStats() {
-  return { projectCount: 0, totalCapacityMw: 0 };
+  return { projectCount: 0, totalElectricityCapacityMw: 0, totalHeatCapacityMw: 0 };
 }
 
 // Installed capacity should only reflect projects that are actually built
 // (operational) — planned/under-construction projects still count toward
-// projectCount but not toward totalCapacityMw. Deliberately not gated on
+// projectCount but not toward the capacity totals. Deliberately not gated on
 // venture type: ownership structure is unrecorded ("Unknown") for ~80% of
 // the dataset (entire countries in the older international data have no
 // venture type at all), so requiring "community owned" here made totals
@@ -71,10 +71,29 @@ function isOperational(project) {
   return stage.includes('operational');
 }
 
+// No dedicated field distinguishes electricity vs heat generation, so this
+// infers it from the technology + technology detail text. Anything that
+// reads as a heat pump, boiler, CHP, district heating network or thermal
+// system is bucketed as heat; everything else (solar, wind, hydro, marine,
+// generic bioenergy, etc.) as electricity. CHP genuinely produces both, but
+// splitting its single capacity figure between two outputs isn't something
+// the source data supports, so it counts wholly as heat here.
+const HEAT_KEYWORDS = /heat|chp|boiler|thermal/i;
+
+function isHeatTechnology(project) {
+  const text = `${project.technology || ''} ${project.technology_detail || ''}`;
+  return HEAT_KEYWORDS.test(text);
+}
+
 function addProjectToStats(stats, project) {
   stats.projectCount += 1;
   if (isOperational(project)) {
-    stats.totalCapacityMw += Number(project.capacity_mw) || 0;
+    const capacity = Number(project.capacity_mw) || 0;
+    if (isHeatTechnology(project)) {
+      stats.totalHeatCapacityMw += capacity;
+    } else {
+      stats.totalElectricityCapacityMw += capacity;
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, NavLink, Link } from 'react-router-dom';
 import MapView from './components/MapView';
 import AboutPage from './components/AboutPage';
+import DataPage from './components/DataPage';
 import './App.css';
 
 function Header() {
@@ -11,6 +12,7 @@ function Header() {
       </Link>
       <nav className="app-header-nav">
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>Map</NavLink>
+        <NavLink to="/data" end className={({ isActive }) => (isActive ? 'active' : '')}>Data</NavLink>
         <NavLink to="/about" end className={({ isActive }) => (isActive ? 'active' : '')}>About</NavLink>
         <a href="https://www.scene.community" target="_blank" rel="noreferrer" className="app-header-scene-link">
           <img src="/Scene-logo.png" alt="Scene" className="app-header-scene-logo" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
@@ -27,6 +29,7 @@ export default function App() {
         <Header />
         <Routes>
           <Route path="/" element={<MapView />} />
+          <Route path="/data" element={<DataPage />} />
           <Route path="/about" element={<AboutPage />} />
         </Routes>
       </div>
