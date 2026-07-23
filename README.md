@@ -108,13 +108,16 @@ client/
 server/
   src/
     routes/          # /api/projects, /api/aggregates/:level, /api/filters
-    aggregate.js      # point-in-polygon aggregation for nation/region layers
+    aggregate.js      # point-in-polygon aggregation for nation/region/council layers
     db.js            # SQLite schema
   data/
     nations.geojson   # country boundaries
-    regions.geojson    # region/state boundaries (includes UK council areas)
+    regions.geojson    # country-level region boundaries (states/provinces, UK constituent countries)
+    councils.geojson   # UK council areas (Local Authority Districts) — finer than regions, coarser than pins
     raw-shapefiles/    # source shapefiles the above were converted from
   scripts/
+    convertShapefiles.js  # nations.geojson + regions.geojson from raw-shapefiles/
+    buildCouncils.js      # councils.geojson from raw-shapefiles/uk-lad.geojson
     importSpreadsheet.js
     seed.js
   templates/
