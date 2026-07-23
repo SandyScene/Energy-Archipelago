@@ -12,10 +12,19 @@ export default function FilterPanel({ filters, onChange }) {
   const [options, setOptions] = useState({ countries: [], regions: [], technologies: [], ventureTypes: [] });
 
   useEffect(() => {
-    fetchFilterOptions().then(setOptions).catch(() => {});
-  }, []);
+    fetchFilterOptions(filters.country).then(setOptions).catch(() => {});
+  }, [filters.country]);
 
   const activeCount = Object.values(filters).filter(Boolean).length;
+
+  function handleFieldChange(key, value) {
+    // Changing country invalidates any region already selected from a different country.
+    if (key === 'country') {
+      onChange({ ...filters, country: value, region: '' });
+    } else {
+      onChange({ ...filters, [key]: value });
+    }
+  }
 
   return (
     <div className="filter-panel">
@@ -35,7 +44,7 @@ export default function FilterPanel({ filters, onChange }) {
           <span>{label}</span>
           <select
             value={filters[key]}
-            onChange={(e) => onChange({ ...filters, [key]: e.target.value })}
+            onChange={(e) => handleFieldChange(key, e.target.value)}
           >
             <option value="">All</option>
             {options[optionsKey].map((value) => (

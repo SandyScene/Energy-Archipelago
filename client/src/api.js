@@ -26,6 +26,6 @@ export function fetchAggregates(level, filters) {
   return fetch(`${API_BASE}/api/aggregates/${level}${queryString(filters)}`).then(handle);
 }
 
-export function fetchFilterOptions() {
-  return fetch(`${API_BASE}/api/filters`).then(handle);
+export function fetchFilterOptions(country) {
+  return fetch(`${API_BASE}/api/filters${queryString({ country })}`).then(handle);
 }
