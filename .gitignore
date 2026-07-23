@@ -6,3 +6,4 @@ server/server_err.log
 server/server.pid
 .env
 .env.local
+.claude/settings.local.json
