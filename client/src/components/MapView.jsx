@@ -88,27 +88,38 @@ export default function MapView() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [legendOpen, setLegendOpen] = useState(true);
 
-  // Load data whenever the map first becomes ready or filters change.
+  // Load data whenever the map first becomes ready or filters change. Retries on failure
+  // since the free-tier API can be asleep and take 30-60s to wake on the first request.
   useEffect(() => {
     if (!mapReady) return;
     let cancelled = false;
+    let retryTimer = null;
 
     async function loadAll() {
-      const [projects, nations, regions] = await Promise.all([
-        fetchProjects(filters),
-        fetchAggregates('nation', filters),
-        fetchAggregates('region', filters),
-      ]);
-      if (cancelled) return;
-      const map = mapRef.current;
-      if (!map) return;
-      map.getSource('projects')?.setData(projectsToGeoJSON(projects));
-      map.getSource('nations')?.setData(nations);
-      map.getSource('regions')?.setData(regions);
+      try {
+        const [projects, nations, regions] = await Promise.all([
+          fetchProjects(filters),
+          fetchAggregates('nation', filters),
+          fetchAggregates('region', filters),
+        ]);
+        if (cancelled) return;
+        const map = mapRef.current;
+        if (!map) return;
+        map.getSource('projects')?.setData(projectsToGeoJSON(projects));
+        map.getSource('nations')?.setData(nations);
+        map.getSource('regions')?.setData(regions);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to load map data, retrying in 5s:', err);
+        retryTimer = setTimeout(loadAll, 5000);
+      }
     }
 
     loadAll();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, [mapReady, filters]);
 
   useEffect(() => {
