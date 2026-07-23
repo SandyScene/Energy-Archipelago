@@ -65,6 +65,32 @@ To insert one example project for testing:
 npm run seed
 ```
 
+## Deployment
+
+**Client** → Netlify. `netlify.toml` at the repo root already sets the base
+directory (`client`), build command, and a SPA fallback redirect (needed for
+`react-router-dom` routes like `/about`). In the Netlify site's environment
+variables, set:
+
+- `VITE_MAPBOX_TOKEN` — your Mapbox token
+- `VITE_API_BASE` — the deployed API's URL (see below), e.g. `https://energy-archipelago-api.onrender.com`
+
+Redeploy after changing environment variables — Vite bakes them into the
+build at build time, not runtime.
+
+**Server** → Render. `render.yaml` at the repo root is a Blueprint: in Render,
+"New +" → "Blueprint", connect this GitHub repo, and it reads that file
+automatically (root directory `server`, build `npm install`, start `npm start`,
+free plan). You can also skip the Blueprint and configure a Web Service by
+hand with the same settings.
+
+The free plan has no persistent disk, so the SQLite database resets on every
+redeploy or restart — re-run `npm run seed` or `npm run import` afterward. The
+database path is configurable via a `DB_PATH` environment variable, so
+upgrading to a paid plan with a persistent disk later is a one-line change,
+not a code change (set `DB_PATH` to a path on the mounted disk, e.g.
+`/var/data/energy-archipelago.db`).
+
 ## Project structure
 
 ```

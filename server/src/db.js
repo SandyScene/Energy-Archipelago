@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, '..', 'data', 'energy-archipelago.db');
+const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'energy-archipelago.db');
 
 export const db = new DatabaseSync(dbPath);
 
