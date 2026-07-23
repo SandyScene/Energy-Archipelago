@@ -44,25 +44,57 @@ function addProjectToStats(stats, project) {
   }
 }
 
+// Some project points sit just outside every polygon — usually a coastal or
+// harbour project falling in a gap left by a generalized/simplified coastline.
+// Rather than silently dropping them from every aggregate, snap each one to
+// whichever polygon is nearest. This only runs for the (rare) unmatched
+// leftovers, so it doesn't reintroduce the O(projects x polygons) cost the
+// bbox prefilter above exists to avoid.
+function findNearestFeatureIndex(point, indexed) {
+  let bestIndex = -1;
+  let bestDistance = Infinity;
+  for (let i = 0; i < indexed.length; i++) {
+    try {
+      const distance = turf.pointToPolygonDistance(point, indexed[i].feature, { units: 'kilometers' });
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = i;
+      }
+    } catch {
+      // malformed geometry in source dataset; skip
+    }
+  }
+  return bestIndex;
+}
+
 function aggregateByBoundary(projects, indexed) {
   const statsByFeatureIndex = indexed.map(() => emptyStats());
+  const unmatched = [];
 
   for (const project of projects) {
     const lng = project.longitude;
     const lat = project.latitude;
     const point = turf.point([lng, lat]);
+    let matched = false;
     for (let i = 0; i < indexed.length; i++) {
       const { feature, bbox } = indexed[i];
       if (!pointInBbox(lng, lat, bbox)) continue;
       try {
         if (turf.booleanPointInPolygon(point, feature)) {
           addProjectToStats(statsByFeatureIndex[i], project);
+          matched = true;
           break;
         }
       } catch {
         // malformed geometry in source dataset; skip
       }
     }
+    if (!matched) unmatched.push({ project, point });
+  }
+
+  for (const { project, point } of unmatched) {
+    const nearestIndex = findNearestFeatureIndex(point, indexed);
+    if (nearestIndex >= 0) addProjectToStats(statsByFeatureIndex[nearestIndex], project);
   }
 
   return {
