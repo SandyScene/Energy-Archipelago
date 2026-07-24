@@ -45,7 +45,7 @@ const MAX_PLAUSIBLE_CAPACITY_MW = 50000;
 // Every project gets exactly one of these technologies — matches client/src/technologyConfig.js.
 const CANONICAL_TECHNOLOGIES = new Set([
   'Solar', 'Wind', 'Hydro', 'Battery Energy Storage System', 'Heat Pump',
-  'Bioenergy', 'Marine', 'Retrofit', 'Energy Advice', 'Other',
+  'Bioenergy', 'Marine', 'Retrofit', 'Energy Advice', 'Low Carbon Transport', 'Other',
 ]);
 
 // Keyed by the value with non-alphanumeric characters stripped, so spacing/case/plural
@@ -79,13 +79,19 @@ const TECHNOLOGY_ALIASES = {
   solarpvbattery: 'Solar',
   solarpvhydro: 'Solar',
   solarthermalbiomass: 'Solar',
+  electrictransport: 'Low Carbon Transport',
+  othertransport: 'Low Carbon Transport',
+  lowcarbontransport: 'Low Carbon Transport',
+  electrictransportothertransport: 'Low Carbon Transport',
+  electrictransporthydrogentransport: 'Low Carbon Transport',
+  hydrogentransport: 'Low Carbon Transport',
   geothermal: 'Other',
   unknown: 'Other',
   project: 'Other',
 };
 
 function normalizeTechnology(value) {
-  if (!value) return null;
+  if (!value) return 'Other';
   const trimmed = String(value).trim();
   if (CANONICAL_TECHNOLOGIES.has(trimmed)) return trimmed;
   const key = trimmed.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -117,10 +123,25 @@ const VENTURE_TYPE_ALIASES = {
 };
 
 function normalizeVentureType(value) {
-  if (!value) return null;
+  if (!value) return 'Unknown';
   const trimmed = String(value).trim();
   if (CANONICAL_VENTURE_TYPES.has(trimmed)) return trimmed;
   return VENTURE_TYPE_ALIASES[trimmed] || 'Unknown';
+}
+
+// Unlike technology/venture type, organisation_type is genuinely open-ended free
+// text (26+ legitimate distinct values) — this only collapses known case/hyphenation
+// duplicates of the same value ("Co-operative" vs "Cooperative"), passing everything
+// else through unchanged rather than forcing it into a narrow canonical set.
+const ORGANISATION_TYPE_ALIASES = {
+  'co-operative': 'Cooperative',
+  'non-profit organisation': 'Non-profit Organisation',
+};
+
+function normalizeOrganisationType(value) {
+  if (!value) return null;
+  const trimmed = String(value).trim();
+  return ORGANISATION_TYPE_ALIASES[trimmed.toLowerCase()] || trimmed;
 }
 
 const COLUMNS = [
@@ -145,7 +166,7 @@ function mapRow(rawRow, headerMap) {
     } else if (value instanceof Date) {
       row[column] = value.toISOString().slice(0, 10);
     } else {
-      row[column] = String(value).trim();
+      row[column] = String(value).trim().replace(/ {2,}/g, ' ');
     }
   }
   if (row.capacity_mw == null && row.capacity_kw != null) {
@@ -158,6 +179,7 @@ function mapRow(rawRow, headerMap) {
   if (row.technology !== undefined) row.technology = normalizeTechnology(row.technology);
   if (row.venture_type !== undefined) row.venture_type = normalizeVentureType(row.venture_type);
   if (row.project_stage !== undefined) row.project_stage = normalizeProjectStage(row.project_stage);
+  if (row.organisation_type !== undefined) row.organisation_type = normalizeOrganisationType(row.organisation_type);
   return row;
 }
 

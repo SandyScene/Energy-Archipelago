@@ -8,6 +8,7 @@ export const TECHNOLOGY_COLORS = {
   Marine: '#1fb6a6',
   Retrofit: '#8d6e63',
   'Energy Advice': '#f06292',
+  'Low Carbon Transport': '#00acc1',
   Other: '#f2994a',
 };
 
