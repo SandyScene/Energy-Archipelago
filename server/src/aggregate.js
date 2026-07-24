@@ -67,8 +67,7 @@ function emptyStats() {
 // exists. Users who want the community-owned-only view can already get it
 // via the venture type filter, which applies to this same aggregate.
 function isOperational(project) {
-  const stage = (project.project_stage || '').toLowerCase();
-  return stage.includes('operational');
+  return project.project_stage === 'Operational';
 }
 
 // No dedicated field distinguishes electricity vs heat generation, so this

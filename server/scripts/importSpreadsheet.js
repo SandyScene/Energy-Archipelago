@@ -8,6 +8,7 @@
 import { readFileSync } from 'node:fs';
 import { read, utils } from 'xlsx';
 import { db } from '../src/db.js';
+import { normalizeProjectStage } from './projectStage.js';
 
 const COLUMN_ALIASES = {
   id: 'id',
@@ -130,6 +131,7 @@ function mapRow(rawRow, headerMap) {
   }
   if (row.technology !== undefined) row.technology = normalizeTechnology(row.technology);
   if (row.venture_type !== undefined) row.venture_type = normalizeVentureType(row.venture_type);
+  if (row.project_stage !== undefined) row.project_stage = normalizeProjectStage(row.project_stage);
   return row;
 }
 
