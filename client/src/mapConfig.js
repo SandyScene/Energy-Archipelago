@@ -10,13 +10,6 @@ export const MAP_STYLE = 'mapbox://styles/mapbox/light-v11';
 
 export const INITIAL_VIEW = { center: [15, 50], zoom: 3.5 };
 
-export function zoomBand(zoom) {
-  if (zoom < ZOOM_BREAKS.nationMax) return 'nation';
-  if (zoom < ZOOM_BREAKS.regionMax) return 'region';
-  if (zoom < ZOOM_BREAKS.councilMax) return 'council';
-  return 'pins';
-}
-
 const COLOR_SCALE = [
   0, 'rgba(180, 190, 200, 0.15)',
   1, '#cfe8d8',

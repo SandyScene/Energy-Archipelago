@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { fetchProjects, fetchAggregates } from '../api';
-import { MAP_STYLE, MAPBOX_TOKEN, INITIAL_VIEW, ZOOM_BREAKS, zoomBand, CHOROPLETH_FILL_COLOR, CHOROPLETH_OPACITY } from '../mapConfig';
+import { MAP_STYLE, MAPBOX_TOKEN, INITIAL_VIEW, ZOOM_BREAKS, CHOROPLETH_FILL_COLOR, CHOROPLETH_OPACITY } from '../mapConfig';
 import { TECHNOLOGY_COLORS, TECHNOLOGY_ICON_EXPRESSION } from '../technologyConfig';
 import { loadPinIcons } from '../pinIcons';
 import FilterPanel from './FilterPanel';
@@ -93,7 +93,7 @@ function pinPopupHTML(projects, index) {
     <div class="ea-tooltip ea-tooltip-pin">
       ${pager}
       <strong>${escapeHtml(p.project_name)}</strong>
-      ${p.lead_organisation ? `<div>${escapeHtml(p.lead_organisation)}${website ? ` — <a href="${escapeHtml(website)}" target="_blank" rel="noreferrer">website</a>` : ''}</div>` : ''}
+      ${p.lead_organisation ? `<div>${website ? `<a href="${escapeHtml(website)}" target="_blank" rel="noreferrer">${escapeHtml(p.lead_organisation)}</a>` : escapeHtml(p.lead_organisation)}</div>` : ''}
       <div class="ea-tooltip-grid">
         ${p.organisation_type ? `<span>Org type</span><span>${escapeHtml(p.organisation_type)}</span>` : ''}
         ${p.venture_type ? `<span>Venture type</span><span>${escapeHtml(p.venture_type)}</span>` : ''}
@@ -125,7 +125,6 @@ export default function MapView() {
   const mapRef = useRef(null);
   const hoverPopupRef = useRef(null);
 
-  const [band, setBand] = useState('nation');
   const [zoom, setZoom] = useState(INITIAL_VIEW.zoom);
   const [mapReady, setMapReady] = useState(false);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
@@ -186,7 +185,6 @@ export default function MapView() {
     map.addControl(new mapboxgl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-right');
 
     map.on('zoom', () => {
-      setBand(zoomBand(map.getZoom()));
       setZoom(map.getZoom());
     });
 
@@ -315,7 +313,6 @@ export default function MapView() {
         renderPinPopup(popup, projects, 0);
       });
 
-      setBand(zoomBand(map.getZoom()));
       setZoom(map.getZoom());
       setMapReady(true);
     });
@@ -323,17 +320,6 @@ export default function MapView() {
     return () => map.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  function resetMap() {
-    mapRef.current?.jumpTo({ center: INITIAL_VIEW.center, zoom: INITIAL_VIEW.zoom });
-  }
-
-  const bandLabel = {
-    nation: 'Nation polygons',
-    region: 'Region polygons',
-    council: 'Council area polygons',
-    pins: 'Individual project pins',
-  }[band];
 
   if (!MAPBOX_TOKEN) {
     return (
@@ -352,11 +338,7 @@ export default function MapView() {
 
       <FilterPanel filters={filters} onChange={setFilters} />
 
-      <div className="zoom-readout">
-        <div className="zoom-readout-level">Zoom: {zoom.toFixed(1)}</div>
-        <div className="zoom-readout-band">{bandLabel}</div>
-        <button className="reset-map-btn" onClick={resetMap}>Reset map</button>
-      </div>
+      <div className="zoom-badge">{zoom.toFixed(1)}</div>
 
       {legendOpen ? (
         <div className="map-legend">
