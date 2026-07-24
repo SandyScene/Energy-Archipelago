@@ -43,16 +43,42 @@ const NUMERIC_COLUMNS = new Set(['capacity_mw', 'capacity_kw', 'latitude', 'long
 const MAX_PLAUSIBLE_CAPACITY_MW = 50000;
 
 // Every project gets exactly one of these technologies — matches client/src/technologyConfig.js.
-const CANONICAL_TECHNOLOGIES = new Set(['Solar', 'Wind', 'Hydro', 'Bioenergy', 'Heat Pumps', 'Marine', 'Other']);
+const CANONICAL_TECHNOLOGIES = new Set([
+  'Solar', 'Wind', 'Hydro', 'Battery Energy Storage System', 'Heat Pump',
+  'Bioenergy', 'Marine', 'Retrofit', 'Energy Advice', 'Other',
+]);
 
 // Keyed by the value with non-alphanumeric characters stripped, so spacing/case/plural
 // variants ("Heat Pump" vs "Heat Pumps") and compound entries ("Bioenergy Solar") all
 // resolve to one canonical technology.
 const TECHNOLOGY_ALIASES = {
-  heatpump: 'Heat Pumps',
+  heatpump: 'Heat Pump',
+  heatpumps: 'Heat Pump',
+  ashp: 'Heat Pump',
+  airsourceheatpump: 'Heat Pump',
+  groundsourceheatpump: 'Heat Pump',
+  heatstorageashp: 'Heat Pump',
+  battery: 'Battery Energy Storage System',
+  batterystorage: 'Battery Energy Storage System',
+  bess: 'Battery Energy Storage System',
+  otherstorage: 'Battery Energy Storage System',
+  electricalstorage: 'Battery Energy Storage System',
+  electricalstorageotherstorage: 'Battery Energy Storage System',
+  energystorage: 'Battery Energy Storage System',
+  insulation: 'Retrofit',
+  energyefficiency: 'Retrofit',
+  advice: 'Energy Advice',
+  energyadvice: 'Energy Advice',
   biogas: 'Bioenergy',
   woodfuel: 'Bioenergy',
+  biomass: 'Bioenergy',
+  anaerobicdigestion: 'Bioenergy',
   bioenergysolar: 'Bioenergy',
+  solarpv: 'Solar',
+  solarthermal: 'Solar',
+  solarpvbattery: 'Solar',
+  solarpvhydro: 'Solar',
+  solarthermalbiomass: 'Solar',
   geothermal: 'Other',
   unknown: 'Other',
   project: 'Other',

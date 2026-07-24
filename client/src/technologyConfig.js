@@ -2,9 +2,12 @@ export const TECHNOLOGY_COLORS = {
   Solar: '#ffd400',
   Wind: '#9e9e9e',
   Hydro: '#6b3fa0',
+  'Battery Energy Storage System': '#2f6fed',
+  'Heat Pump': '#d0294f',
   Bioenergy: '#6fbf3f',
-  'Heat Pumps': '#d0294f',
   Marine: '#1fb6a6',
+  Retrofit: '#8d6e63',
+  'Energy Advice': '#f06292',
   Other: '#f2994a',
 };
 
