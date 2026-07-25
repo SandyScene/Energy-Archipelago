@@ -130,6 +130,7 @@ export default function MapView() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [legendOpen, setLegendOpen] = useState(true);
   const [showLoadingBar, setShowLoadingBar] = useState(false);
+  const [viewMode, setViewMode] = useState('polygons');
 
   // Load data whenever the map first becomes ready or filters change. Retries on failure
   // since the free-tier API can be asleep and take 30-60s to wake on the first request.
@@ -330,6 +331,30 @@ export default function MapView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Manual override of the default zoom-driven display: "polygons" keeps the
+  // nation/region/council choropleth drill-down (extending councils to the
+  // top of the zoom range, since pins would otherwise take over there);
+  // "pins" shows clustered point markers at every zoom level instead.
+  useEffect(() => {
+    if (!mapReady) return;
+    const map = mapRef.current;
+    if (!map) return;
+
+    const polygonLayers = ['nations-fill', 'nations-outline', 'regions-fill', 'regions-outline', 'councils-fill', 'councils-outline'];
+    const pinLayers = ['clusters', 'cluster-count', 'unclustered-point'];
+
+    if (viewMode === 'polygons') {
+      polygonLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'visible'));
+      pinLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'none'));
+      map.setLayerZoomRange('councils-fill', ZOOM_BREAKS.regionMax, 24);
+      map.setLayerZoomRange('councils-outline', ZOOM_BREAKS.regionMax, 24);
+    } else {
+      polygonLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'none'));
+      pinLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'visible'));
+      pinLayers.forEach((id) => map.setLayerZoomRange(id, 0, 24));
+    }
+  }, [viewMode, mapReady]);
+
   if (!MAPBOX_TOKEN) {
     return (
       <div className="map-shell">
@@ -354,6 +379,21 @@ export default function MapView() {
       <FilterPanel filters={filters} onChange={setFilters} />
 
       <div className="zoom-badge">{zoom.toFixed(1)}</div>
+
+      <div className="view-mode-toggle" role="group" aria-label="Map view mode">
+        <button
+          className={`view-mode-btn${viewMode === 'polygons' ? ' active' : ''}`}
+          onClick={() => setViewMode('polygons')}
+        >
+          Polygons
+        </button>
+        <button
+          className={`view-mode-btn${viewMode === 'pins' ? ' active' : ''}`}
+          onClick={() => setViewMode('pins')}
+        >
+          Pins
+        </button>
+      </div>
 
       {legendOpen ? (
         <div className="map-legend">

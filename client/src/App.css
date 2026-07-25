@@ -124,6 +124,35 @@
   color: #1a202c;
 }
 
+.view-mode-toggle {
+  position: absolute;
+  top: 46px;
+  right: 12px;
+  z-index: 1;
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.view-mode-btn {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5568;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.view-mode-btn.active {
+  background: #2f6fed;
+  color: #ffffff;
+}
+
 .map-legend {
   position: absolute;
   bottom: 150px;
