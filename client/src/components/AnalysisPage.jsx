@@ -30,27 +30,39 @@ function formatCount(n) {
   return Number(n).toLocaleString();
 }
 
-function buildCountrySegments(rows) {
-  const sorted = [...rows].sort((a, b) => b.total - a.total);
-  const top = sorted.slice(0, TOP_COUNTRY_COUNT);
-  const rest = sorted.slice(TOP_COUNTRY_COUNT);
+// Fixed color assignment based on combined electricity+heat total, reused
+// for both the electricity and heat bars below — a country keeps the same
+// color/identity regardless of which metric is charted (color follows the
+// entity, never its per-chart rank).
+function splitTopCountries(rows) {
+  const sorted = [...rows].sort(
+    (a, b) => (b.totalElectricityCapacityMw + b.totalHeatCapacityMw) - (a.totalElectricityCapacityMw + a.totalHeatCapacityMw),
+  );
+  return { top: sorted.slice(0, TOP_COUNTRY_COUNT), rest: sorted.slice(TOP_COUNTRY_COUNT) };
+}
 
-  const segments = top.map((row, i) => ({
-    label: row.country,
-    value: row.total,
-    color: COUNTRY_SEGMENT_COLORS[i],
-    electricity: row.totalElectricityCapacityMw,
-    heat: row.totalHeatCapacityMw,
-  }));
+function buildMetricSegments(top, rest, metric) {
+  const segments = top
+    .map((row, i) => ({
+      label: row.country,
+      value: row[metric],
+      color: COUNTRY_SEGMENT_COLORS[i],
+      electricity: row.totalElectricityCapacityMw,
+      heat: row.totalHeatCapacityMw,
+    }))
+    .filter((s) => s.value > 0); // e.g. a country with zero heat shouldn't show a heat sliver
 
   if (rest.length > 0) {
-    segments.push({
-      label: `Other (${rest.length} countries)`,
-      value: rest.reduce((sum, r) => sum + r.total, 0),
-      color: OTHER_SEGMENT_COLOR,
-      electricity: rest.reduce((sum, r) => sum + r.totalElectricityCapacityMw, 0),
-      heat: rest.reduce((sum, r) => sum + r.totalHeatCapacityMw, 0),
-    });
+    const restValue = rest.reduce((sum, r) => sum + r[metric], 0);
+    if (restValue > 0) {
+      segments.push({
+        label: `Other (${rest.length} countries)`,
+        value: restValue,
+        color: OTHER_SEGMENT_COLOR,
+        electricity: rest.reduce((sum, r) => sum + r.totalElectricityCapacityMw, 0),
+        heat: rest.reduce((sum, r) => sum + r.totalHeatCapacityMw, 0),
+      });
+    }
   }
 
   return segments;
@@ -59,16 +71,15 @@ function buildCountrySegments(rows) {
 // A single bar, part-to-whole across countries. Only the largest segments
 // get an inline label (see marks-and-anatomy: never force a label into a
 // sliver) — the legend and tooltip carry the rest.
-function StackedCountryBar({ rows }) {
+function StackedCountryBar({ title, segments }) {
   const [hovered, setHovered] = useState(null);
   const [tooltip, setTooltip] = useState(null);
 
-  const segments = buildCountrySegments(rows);
   const total = segments.reduce((sum, s) => sum + s.value, 0);
 
   return (
     <div className="analysis-card">
-      <h2 className="analysis-card-title">Total operational generation by country</h2>
+      <h2 className="analysis-card-title">{title}</h2>
       <div className="stacked-bar">
         {segments.map((seg) => {
           const pct = total > 0 ? (seg.value / total) * 100 : 0;
@@ -106,7 +117,6 @@ function StackedCountryBar({ rows }) {
           <div className="chart-tooltip-grid">
             <span>Electricity</span><span>{formatMw(tooltip.electricity)}</span>
             <span>Heat</span><span>{formatMw(tooltip.heat)}</span>
-            <span>Total</span><span>{formatMw(tooltip.value)}</span>
           </div>
         </div>
       )}
@@ -252,10 +262,9 @@ export default function AnalysisPage() {
     return () => { cancelled = true; };
   }, [country]);
 
-  const countryRows = byCountry.map((row) => ({
-    ...row,
-    total: row.totalElectricityCapacityMw + row.totalHeatCapacityMw,
-  }));
+  const { top: topCountries, rest: otherCountries } = splitTopCountries(byCountry);
+  const electricitySegments = buildMetricSegments(topCountries, otherCountries, 'totalElectricityCapacityMw');
+  const heatSegments = buildMetricSegments(topCountries, otherCountries, 'totalHeatCapacityMw');
 
   const technologyCountSegments = summary.byTechnology.map((t) => ({
     label: t.technology,
@@ -282,7 +291,10 @@ export default function AnalysisPage() {
       )}
       <div className="analysis-content">
         <section className="analysis-section">
-          <StackedCountryBar rows={countryRows} />
+          <StackedCountryBar title="Total operational electricity generation by country" segments={electricitySegments} />
+        </section>
+        <section className="analysis-section">
+          <StackedCountryBar title="Total operational heat generation by country" segments={heatSegments} />
         </section>
 
         <section className="analysis-filter-row">
