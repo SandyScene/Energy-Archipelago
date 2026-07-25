@@ -44,20 +44,26 @@ const MAX_PLAUSIBLE_CAPACITY_MW = 50000;
 
 // Every project gets exactly one of these technologies — matches client/src/technologyConfig.js.
 const CANONICAL_TECHNOLOGIES = new Set([
-  'Solar', 'Wind', 'Hydro', 'Battery Energy Storage System', 'Heat Pump',
+  'Solar', 'Wind', 'Hydro', 'Battery Energy Storage System', 'Low Carbon Heating',
   'Bioenergy', 'Marine', 'Retrofit', 'Energy Advice', 'Low Carbon Transport', 'Other',
 ]);
 
 // Keyed by the value with non-alphanumeric characters stripped, so spacing/case/plural
 // variants ("Heat Pump" vs "Heat Pumps") and compound entries ("Bioenergy Solar") all
-// resolve to one canonical technology.
+// resolve to one canonical technology. "Low Carbon Heating" broadens the old "Heat Pump"
+// category to cover any low-carbon heating project, not just heat pumps specifically —
+// district heating networks, electric boiler heat networks, etc. included.
 const TECHNOLOGY_ALIASES = {
-  heatpump: 'Heat Pump',
-  heatpumps: 'Heat Pump',
-  ashp: 'Heat Pump',
-  airsourceheatpump: 'Heat Pump',
-  groundsourceheatpump: 'Heat Pump',
-  heatstorageashp: 'Heat Pump',
+  heatpump: 'Low Carbon Heating',
+  heatpumps: 'Low Carbon Heating',
+  ashp: 'Low Carbon Heating',
+  airsourceheatpump: 'Low Carbon Heating',
+  groundsourceheatpump: 'Low Carbon Heating',
+  heatstorageashp: 'Low Carbon Heating',
+  districtheating: 'Low Carbon Heating',
+  districtheatingnetwork: 'Low Carbon Heating',
+  heatnetwork: 'Low Carbon Heating',
+  electricboiler: 'Low Carbon Heating',
   battery: 'Battery Energy Storage System',
   batterystorage: 'Battery Energy Storage System',
   bess: 'Battery Energy Storage System',

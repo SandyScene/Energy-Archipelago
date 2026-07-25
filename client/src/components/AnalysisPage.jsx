@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchAnalysisByCountry, fetchAnalysisSummary, fetchFilterOptions } from '../api';
-import { TECHNOLOGY_COLORS } from '../technologyConfig';
+import { TECHNOLOGY_COLORS, TECHNOLOGY_GROUP_NAMES } from '../technologyConfig';
 import './AnalysisPage.css';
 
 const STAGE_COLORS = {
@@ -211,12 +211,11 @@ function Doughnut({ title, segments, formatValue }) {
   );
 }
 
-const EMPTY_ANALYSIS_FILTERS = { country: '', ventureType: '' };
+const EMPTY_ANALYSIS_FILTERS = { country: '', technologyGroup: '' };
 
 export default function AnalysisPage() {
   const [byCountry, setByCountry] = useState([]);
   const [countries, setCountries] = useState([]);
-  const [ventureTypes, setVentureTypes] = useState([]);
   const [filters, setFilters] = useState(EMPTY_ANALYSIS_FILTERS);
   const [summary, setSummary] = useState({ byTechnology: [], byStage: [] });
   const [showLoadingBar, setShowLoadingBar] = useState(false);
@@ -240,7 +239,6 @@ export default function AnalysisPage() {
         if (cancelled) return;
         setByCountry(countryTotals);
         setCountries(filterOptions.countries);
-        setVentureTypes(filterOptions.ventureTypes);
         setSummary(summaryData);
         setShowLoadingBar(false);
       } catch (err) {
@@ -314,15 +312,15 @@ export default function AnalysisPage() {
             ))}
           </select>
 
-          <label htmlFor="analysis-venture-type">Project type</label>
+          <label htmlFor="analysis-technology-group">Technology type</label>
           <select
-            id="analysis-venture-type"
-            value={filters.ventureType}
-            onChange={(e) => setFilters((f) => ({ ...f, ventureType: e.target.value }))}
+            id="analysis-technology-group"
+            value={filters.technologyGroup}
+            onChange={(e) => setFilters((f) => ({ ...f, technologyGroup: e.target.value }))}
           >
             <option value="">All</option>
-            {ventureTypes.map((v) => (
-              <option key={v} value={v}>{v}</option>
+            {TECHNOLOGY_GROUP_NAMES.map((g) => (
+              <option key={g} value={g}>{g}</option>
             ))}
           </select>
         </section>

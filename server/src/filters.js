@@ -1,3 +1,5 @@
+import { TECHNOLOGY_GROUPS } from './technologyGroups.js';
+
 const FILTER_PARAM_TO_COLUMN = {
   country: 'country',
   region: 'region',
@@ -16,6 +18,12 @@ export function buildProjectFilter(query) {
       clauses.push(`${column} = ?`);
       params.push(value);
     }
+  }
+
+  const technologies = TECHNOLOGY_GROUPS[query.technologyGroup];
+  if (technologies?.length) {
+    clauses.push(`technology IN (${technologies.map(() => '?').join(', ')})`);
+    params.push(...technologies);
   }
 
   return {
