@@ -126,7 +126,7 @@ function fixMaster() {
   const lonIndex = headerRow.indexOf('Longitude');
   if (techIndex === -1 || latIndex === -1 || lonIndex === -1) throw new Error('Required column not found');
 
-  const newRows = [];
+  const newRows = [headerRow];
   let splitCount = 0;
   let reclassified = 0;
 
