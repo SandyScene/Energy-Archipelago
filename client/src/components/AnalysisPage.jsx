@@ -11,6 +11,15 @@ const STAGE_COLORS = {
   Unknown: '#7d8590',
 };
 
+// Categorical order for the country stacked bar (dark-surface steps from the
+// palette) — fixed order, never cycled. Denmark alone runs ~88% of total
+// operational capacity, so only the largest handful of countries get their
+// own hue; the long tail (mostly sub-1MW) folds into "Other" rather than
+// generating a 9th+ color for slivers nobody could distinguish anyway.
+const COUNTRY_SEGMENT_COLORS = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'];
+const OTHER_SEGMENT_COLOR = '#7d8590';
+const TOP_COUNTRY_COUNT = COUNTRY_SEGMENT_COLORS.length;
+
 function formatMw(n) {
   if (n === null || n === undefined || Number.isNaN(Number(n))) return '—';
   return `${Number(n).toLocaleString(undefined, { maximumFractionDigits: 1 })} MW`;
@@ -21,38 +30,83 @@ function formatCount(n) {
   return Number(n).toLocaleString();
 }
 
-// Horizontal bar list — one series (total operational generation), so no
-// legend box; hover reveals the electricity/heat split behind each total.
-function CountryBarChart({ rows }) {
+function buildCountrySegments(rows) {
+  const sorted = [...rows].sort((a, b) => b.total - a.total);
+  const top = sorted.slice(0, TOP_COUNTRY_COUNT);
+  const rest = sorted.slice(TOP_COUNTRY_COUNT);
+
+  const segments = top.map((row, i) => ({
+    label: row.country,
+    value: row.total,
+    color: COUNTRY_SEGMENT_COLORS[i],
+    electricity: row.totalElectricityCapacityMw,
+    heat: row.totalHeatCapacityMw,
+  }));
+
+  if (rest.length > 0) {
+    segments.push({
+      label: `Other (${rest.length} countries)`,
+      value: rest.reduce((sum, r) => sum + r.total, 0),
+      color: OTHER_SEGMENT_COLOR,
+      electricity: rest.reduce((sum, r) => sum + r.totalElectricityCapacityMw, 0),
+      heat: rest.reduce((sum, r) => sum + r.totalHeatCapacityMw, 0),
+    });
+  }
+
+  return segments;
+}
+
+// A single bar, part-to-whole across countries. Only the largest segments
+// get an inline label (see marks-and-anatomy: never force a label into a
+// sliver) — the legend and tooltip carry the rest.
+function StackedCountryBar({ rows }) {
+  const [hovered, setHovered] = useState(null);
   const [tooltip, setTooltip] = useState(null);
-  const maxTotal = Math.max(...rows.map((r) => r.total), 1);
+
+  const segments = buildCountrySegments(rows);
+  const total = segments.reduce((sum, s) => sum + s.value, 0);
 
   return (
     <div className="analysis-card">
       <h2 className="analysis-card-title">Total operational generation by country</h2>
-      <div className="bar-rows">
-        {rows.map((row) => (
-          <div
-            key={row.country}
-            className="bar-row"
-            onMouseMove={(e) => setTooltip({ x: e.clientX, y: e.clientY, ...row })}
-            onMouseLeave={() => setTooltip(null)}
-          >
-            <span className="bar-row-label" title={row.country}>{row.country}</span>
-            <div className="bar-row-track">
-              <div className="bar-row-fill" style={{ width: `${Math.max((row.total / maxTotal) * 100, row.total > 0 ? 1 : 0)}%` }} />
+      <div className="stacked-bar">
+        {segments.map((seg) => {
+          const pct = total > 0 ? (seg.value / total) * 100 : 0;
+          return (
+            <div
+              key={seg.label}
+              className="stacked-bar-segment"
+              style={{ width: `${pct}%`, background: seg.color, opacity: hovered && hovered !== seg.label ? 0.5 : 1 }}
+              onMouseEnter={() => setHovered(seg.label)}
+              onMouseMove={(e) => setTooltip({ x: e.clientX, y: e.clientY, ...seg })}
+              onMouseLeave={() => { setHovered(null); setTooltip(null); }}
+            >
+              {pct >= 9 && <span className="stacked-bar-label">{seg.label} · {formatMw(seg.value)}</span>}
             </div>
-            <span className="bar-row-value">{formatMw(row.total)}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
+      <ul className="stacked-bar-legend">
+        {segments.map((seg) => (
+          <li
+            key={seg.label}
+            className={`stacked-bar-legend-row${hovered === seg.label ? ' hovered' : ''}`}
+            onMouseEnter={() => setHovered(seg.label)}
+            onMouseLeave={() => setHovered(null)}
+          >
+            <span className="stacked-bar-legend-swatch" style={{ background: seg.color }} />
+            <span className="stacked-bar-legend-label">{seg.label}</span>
+            <span className="stacked-bar-legend-value">{formatMw(seg.value)}</span>
+          </li>
+        ))}
+      </ul>
       {tooltip && (
         <div className="chart-tooltip" style={{ left: tooltip.x + 16, top: tooltip.y + 16 }}>
-          <strong>{tooltip.country}</strong>
+          <strong>{tooltip.label}</strong>
           <div className="chart-tooltip-grid">
-            <span>Electricity</span><span>{formatMw(tooltip.totalElectricityCapacityMw)}</span>
-            <span>Heat</span><span>{formatMw(tooltip.totalHeatCapacityMw)}</span>
-            <span>Total</span><span>{formatMw(tooltip.total)}</span>
+            <span>Electricity</span><span>{formatMw(tooltip.electricity)}</span>
+            <span>Heat</span><span>{formatMw(tooltip.heat)}</span>
+            <span>Total</span><span>{formatMw(tooltip.value)}</span>
           </div>
         </div>
       )}
@@ -228,7 +282,7 @@ export default function AnalysisPage() {
       )}
       <div className="analysis-content">
         <section className="analysis-section">
-          <CountryBarChart rows={countryRows} />
+          <StackedCountryBar rows={countryRows} />
         </section>
 
         <section className="analysis-filter-row">
