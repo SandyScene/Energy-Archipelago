@@ -1,5 +1,6 @@
 import { db } from './db.js';
 import { isOperational, isHeatTechnology } from './aggregate.js';
+import { buildProjectFilter } from './filters.js';
 
 // Total operational generation by country, split into electricity vs heat.
 // Grouped by the flat `country` column (not spatial polygon matching, unlike
@@ -33,10 +34,11 @@ export function aggregateByCountry() {
 }
 
 // Project count + operational capacity by technology, and total capacity
-// (any stage) by project stage — optionally scoped to one country.
-export function aggregateSummary(country) {
-  const where = country ? 'WHERE country = ?' : '';
-  const params = country ? [country] : [];
+// (any stage) by project stage — optionally scoped by country/venture type
+// (or any other filter the map's FilterPanel supports, via the same query
+// param convention).
+export function aggregateSummary(query) {
+  const { where, params } = buildProjectFilter(query);
   const rows = db.prepare(`SELECT technology, project_stage, capacity_mw FROM projects ${where}`).all(...params);
 
   const byTechnology = new Map();

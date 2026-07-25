@@ -34,8 +34,8 @@ export function fetchAnalysisByCountry() {
   return fetch(`${API_BASE}/api/analysis/by-country`).then(handle);
 }
 
-export function fetchAnalysisSummary(country) {
-  return fetch(`${API_BASE}/api/analysis/summary${queryString({ country })}`).then(handle);
+export function fetchAnalysisSummary(filters) {
+  return fetch(`${API_BASE}/api/analysis/summary${queryString(filters)}`).then(handle);
 }
 
 export function submitDataRequest(payload) {

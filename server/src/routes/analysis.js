@@ -8,7 +8,7 @@ router.get('/by-country', (req, res) => {
 });
 
 router.get('/summary', (req, res) => {
-  res.json(aggregateSummary(req.query.country));
+  res.json(aggregateSummary(req.query));
 });
 
 export default router;

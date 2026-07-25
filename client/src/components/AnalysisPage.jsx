@@ -211,10 +211,13 @@ function Doughnut({ title, segments, formatValue }) {
   );
 }
 
+const EMPTY_ANALYSIS_FILTERS = { country: '', ventureType: '' };
+
 export default function AnalysisPage() {
   const [byCountry, setByCountry] = useState([]);
   const [countries, setCountries] = useState([]);
-  const [country, setCountry] = useState('');
+  const [ventureTypes, setVentureTypes] = useState([]);
+  const [filters, setFilters] = useState(EMPTY_ANALYSIS_FILTERS);
   const [summary, setSummary] = useState({ byTechnology: [], byStage: [] });
   const [showLoadingBar, setShowLoadingBar] = useState(false);
 
@@ -232,11 +235,12 @@ export default function AnalysisPage() {
         const [countryTotals, filterOptions, summaryData] = await Promise.all([
           fetchAnalysisByCountry(),
           fetchFilterOptions(),
-          fetchAnalysisSummary(''),
+          fetchAnalysisSummary(EMPTY_ANALYSIS_FILTERS),
         ]);
         if (cancelled) return;
         setByCountry(countryTotals);
         setCountries(filterOptions.countries);
+        setVentureTypes(filterOptions.ventureTypes);
         setSummary(summaryData);
         setShowLoadingBar(false);
       } catch (err) {
@@ -256,11 +260,11 @@ export default function AnalysisPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchAnalysisSummary(country)
+    fetchAnalysisSummary(filters)
       .then((data) => { if (!cancelled) setSummary(data); })
       .catch((err) => console.error('Failed to load filtered analysis data:', err));
     return () => { cancelled = true; };
-  }, [country]);
+  }, [filters]);
 
   const { top: topCountries, rest: otherCountries } = splitTopCountries(byCountry);
   const electricitySegments = buildMetricSegments(topCountries, otherCountries, 'totalElectricityCapacityMw');
@@ -299,10 +303,26 @@ export default function AnalysisPage() {
 
         <section className="analysis-filter-row">
           <label htmlFor="analysis-country">Nation</label>
-          <select id="analysis-country" value={country} onChange={(e) => setCountry(e.target.value)}>
+          <select
+            id="analysis-country"
+            value={filters.country}
+            onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value }))}
+          >
             <option value="">Global</option>
             {countries.map((c) => (
               <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          <label htmlFor="analysis-venture-type">Project type</label>
+          <select
+            id="analysis-venture-type"
+            value={filters.ventureType}
+            onChange={(e) => setFilters((f) => ({ ...f, ventureType: e.target.value }))}
+          >
+            <option value="">All</option>
+            {ventureTypes.map((v) => (
+              <option key={v} value={v}>{v}</option>
             ))}
           </select>
         </section>
