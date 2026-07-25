@@ -30,6 +30,14 @@ export function fetchFilterOptions(country) {
   return fetch(`${API_BASE}/api/filters${queryString({ country })}`).then(handle);
 }
 
+export function fetchAnalysisByCountry() {
+  return fetch(`${API_BASE}/api/analysis/by-country`).then(handle);
+}
+
+export function fetchAnalysisSummary(country) {
+  return fetch(`${API_BASE}/api/analysis/summary${queryString({ country })}`).then(handle);
+}
+
 export function submitDataRequest(payload) {
   return fetch(`${API_BASE}/api/data-requests`, {
     method: 'POST',

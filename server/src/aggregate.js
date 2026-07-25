@@ -66,7 +66,7 @@ function emptyStats() {
 // read as zero for most of the map even though real operational capacity
 // exists. Users who want the community-owned-only view can already get it
 // via the venture type filter, which applies to this same aggregate.
-function isOperational(project) {
+export function isOperational(project) {
   return project.project_stage === 'Operational';
 }
 
@@ -79,7 +79,7 @@ function isOperational(project) {
 // the source data supports, so it counts wholly as heat here.
 const HEAT_KEYWORDS = /heat|chp|boiler|thermal/i;
 
-function isHeatTechnology(project) {
+export function isHeatTechnology(project) {
   const text = `${project.technology || ''} ${project.technology_detail || ''}`;
   return HEAT_KEYWORDS.test(text);
 }
