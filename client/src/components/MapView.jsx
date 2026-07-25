@@ -129,6 +129,7 @@ export default function MapView() {
   const [mapReady, setMapReady] = useState(false);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [legendOpen, setLegendOpen] = useState(true);
+  const [showLoadingBar, setShowLoadingBar] = useState(false);
 
   // Load data whenever the map first becomes ready or filters change. Retries on failure
   // since the free-tier API can be asleep and take 30-60s to wake on the first request.
@@ -136,6 +137,12 @@ export default function MapView() {
     if (!mapReady) return;
     let cancelled = false;
     let retryTimer = null;
+
+    // Only show the loading bar if the request is still pending after a short
+    // delay — avoids a flash for the common case where the API is already warm.
+    const showBarTimer = setTimeout(() => {
+      if (!cancelled) setShowLoadingBar(true);
+    }, 300);
 
     async function loadAll(attempt = 0) {
       try {
@@ -152,6 +159,7 @@ export default function MapView() {
         map.getSource('nations')?.setData(nations);
         map.getSource('regions')?.setData(regions);
         map.getSource('councils')?.setData(councils);
+        setShowLoadingBar(false);
       } catch (err) {
         if (cancelled) return;
         // Exponential backoff (5s, 10s, 20s... capped at 60s) so a struggling API isn't
@@ -165,6 +173,7 @@ export default function MapView() {
     loadAll();
     return () => {
       cancelled = true;
+      clearTimeout(showBarTimer);
       if (retryTimer) clearTimeout(retryTimer);
     };
   }, [mapReady, filters]);
@@ -335,6 +344,12 @@ export default function MapView() {
   return (
     <div className="map-shell">
       <div ref={containerRef} className="map-container" />
+
+      {showLoadingBar && (
+        <div className="loading-bar" role="progressbar" aria-label="Loading map data">
+          <div className="loading-bar-fill" />
+        </div>
+      )}
 
       <FilterPanel filters={filters} onChange={setFilters} />
 
