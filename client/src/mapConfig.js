@@ -10,8 +10,12 @@ export const MAP_STYLE = 'mapbox://styles/mapbox/light-v11';
 
 export const INITIAL_VIEW = { center: [15, 50], zoom: 3.5 };
 
+// Solid, opaque colors throughout (no reliance on a low fill-opacity to fade
+// out the zero case) — a data-driven fill-opacity combined with a partially
+// transparent rgba() stop proved unreliable in practice (zero-count areas
+// were rendering as a solid dark color instead of fading out).
 const COLOR_SCALE = [
-  0, 'rgba(180, 190, 200, 0.15)',
+  0, '#e5e7eb',
   1, '#cfe8d8',
   5, '#8fd0aa',
   20, '#39a86b',
@@ -27,7 +31,7 @@ export const CHOROPLETH_FILL_COLOR = ['interpolate', ['linear'], ['get', 'projec
 // its bottom two tiers with the top two never reached at all. Same colors,
 // rescaled breakpoints for this tier's actual magnitude.
 const COLOR_SCALE_FINE = [
-  0, 'rgba(180, 190, 200, 0.15)',
+  0, '#e5e7eb',
   1, '#cfe8d8',
   4, '#8fd0aa',
   10, '#39a86b',
@@ -37,4 +41,4 @@ const COLOR_SCALE_FINE = [
 
 export const CHOROPLETH_FILL_COLOR_FINE = ['interpolate', ['linear'], ['get', 'projectCount'], ...COLOR_SCALE_FINE];
 
-export const CHOROPLETH_OPACITY = ['case', ['==', ['get', 'projectCount'], 0], 0.08, 0.75];
+export const CHOROPLETH_OPACITY = 0.8;
