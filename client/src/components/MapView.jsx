@@ -268,10 +268,14 @@ export default function MapView() {
         minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
         paint: { 'fill-color': CHOROPLETH_FILL_COLOR_FINE, 'fill-opacity': CHOROPLETH_OPACITY },
       });
+      // Thin, light outline — councils.geojson has huge size variance (Highland
+      // is ~26,000km2, Middlesbrough ~55km2), and a thicker/darker stroke than
+      // the other polygon tiers would visually swamp the fill on the smallest
+      // shapes, making a near-transparent 0-project council look solid dark.
       map.addLayer({
         id: 'councils-outline', type: 'line', source: 'councils',
         minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
-        paint: { 'line-color': '#4a5568', 'line-width': 1 },
+        paint: { 'line-color': '#94a3b8', 'line-width': 0.3 },
       });
 
       map.addLayer({
