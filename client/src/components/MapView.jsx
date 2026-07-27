@@ -223,16 +223,23 @@ export default function MapView() {
         clusterRadius: 50,
       });
 
+      // beforeId: 'water' inserts every choropleth layer below the base
+      // style's own water fill — without this they render on top of the
+      // whole style, so any estuary/inlet a council or nation boundary
+      // happens to include (administrative boundaries often extend into
+      // tidal water) gets covered in solid choropleth color instead of
+      // showing as water. Pins/clusters are unaffected — they're added
+      // later, without a beforeId, so they stay on top of everything.
       map.addLayer({
         id: 'nations-fill', type: 'fill', source: 'nations',
         maxzoom: ZOOM_BREAKS.nationMax,
         paint: { 'fill-color': CHOROPLETH_FILL_COLOR, 'fill-opacity': CHOROPLETH_OPACITY },
-      });
+      }, 'water');
       map.addLayer({
         id: 'nations-outline', type: 'line', source: 'nations',
         maxzoom: ZOOM_BREAKS.nationMax,
         paint: { 'line-color': '#4a5568', 'line-width': 0.5 },
-      });
+      }, 'water');
 
       // UK-only: reveals England/Scotland/Wales/Northern Ireland in place of
       // the single UK nation polygon for the tail end of the nation zoom
@@ -241,12 +248,12 @@ export default function MapView() {
         id: 'uk-countries-fill', type: 'fill', source: 'uk-countries',
         minzoom: ZOOM_BREAKS.ukCountriesMin, maxzoom: ZOOM_BREAKS.nationMax,
         paint: { 'fill-color': CHOROPLETH_FILL_COLOR, 'fill-opacity': CHOROPLETH_OPACITY },
-      });
+      }, 'water');
       map.addLayer({
         id: 'uk-countries-outline', type: 'line', source: 'uk-countries',
         minzoom: ZOOM_BREAKS.ukCountriesMin, maxzoom: ZOOM_BREAKS.nationMax,
         paint: { 'line-color': '#4a5568', 'line-width': 0.5 },
-      });
+      }, 'water');
 
       // Regions (global admin-1 data) and councils (UK-only local authority
       // areas) share the same zoom band rather than a sequential handoff —
@@ -256,18 +263,18 @@ export default function MapView() {
         id: 'regions-fill', type: 'fill', source: 'regions',
         minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
         paint: { 'fill-color': CHOROPLETH_FILL_COLOR, 'fill-opacity': CHOROPLETH_OPACITY },
-      });
+      }, 'water');
       map.addLayer({
         id: 'regions-outline', type: 'line', source: 'regions',
         minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
         paint: { 'line-color': '#4a5568', 'line-width': 0.5 },
-      });
+      }, 'water');
 
       map.addLayer({
         id: 'councils-fill', type: 'fill', source: 'councils',
         minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
         paint: { 'fill-color': CHOROPLETH_FILL_COLOR_FINE, 'fill-opacity': CHOROPLETH_OPACITY },
-      });
+      }, 'water');
       // Thin, light outline — councils.geojson has huge size variance (Highland
       // is ~26,000km2, Middlesbrough ~55km2), and a thicker/darker stroke than
       // the other polygon tiers would visually swamp the fill on the smallest
@@ -276,7 +283,7 @@ export default function MapView() {
         id: 'councils-outline', type: 'line', source: 'councils',
         minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
         paint: { 'line-color': '#94a3b8', 'line-width': 0.3 },
-      });
+      }, 'water');
 
       map.addLayer({
         id: 'clusters', type: 'circle', source: 'projects',
