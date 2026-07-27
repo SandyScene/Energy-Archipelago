@@ -21,4 +21,20 @@ const COLOR_SCALE = [
 
 export const CHOROPLETH_FILL_COLOR = ['interpolate', ['linear'], ['get', 'projectCount'], ...COLOR_SCALE];
 
+// UK council areas (~350 features) top out around 60 projects even for the
+// busiest area (the Highlands) — nation/region/uk-country counts reach into
+// the hundreds, so the shared scale above left every council crammed into
+// its bottom two tiers with the top two never reached at all. Same colors,
+// rescaled breakpoints for this tier's actual magnitude.
+const COLOR_SCALE_FINE = [
+  0, 'rgba(180, 190, 200, 0.15)',
+  1, '#cfe8d8',
+  4, '#8fd0aa',
+  10, '#39a86b',
+  25, '#0f7a45',
+  65, '#0a5c33',
+];
+
+export const CHOROPLETH_FILL_COLOR_FINE = ['interpolate', ['linear'], ['get', 'projectCount'], ...COLOR_SCALE_FINE];
+
 export const CHOROPLETH_OPACITY = ['case', ['==', ['get', 'projectCount'], 0], 0.08, 0.75];

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { fetchProjects, fetchAggregates } from '../api';
-import { MAP_STYLE, MAPBOX_TOKEN, INITIAL_VIEW, ZOOM_BREAKS, CHOROPLETH_FILL_COLOR, CHOROPLETH_OPACITY } from '../mapConfig';
+import { MAP_STYLE, MAPBOX_TOKEN, INITIAL_VIEW, ZOOM_BREAKS, CHOROPLETH_FILL_COLOR, CHOROPLETH_FILL_COLOR_FINE, CHOROPLETH_OPACITY } from '../mapConfig';
 import { TECHNOLOGY_COLORS, TECHNOLOGY_ICON_EXPRESSION } from '../technologyConfig';
 import { loadPinIcons } from '../pinIcons';
 import FilterPanel from './FilterPanel';
@@ -260,7 +260,7 @@ export default function MapView() {
       map.addLayer({
         id: 'councils-fill', type: 'fill', source: 'councils',
         minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
-        paint: { 'fill-color': CHOROPLETH_FILL_COLOR, 'fill-opacity': CHOROPLETH_OPACITY },
+        paint: { 'fill-color': CHOROPLETH_FILL_COLOR_FINE, 'fill-opacity': CHOROPLETH_OPACITY },
       });
       map.addLayer({
         id: 'councils-outline', type: 'line', source: 'councils',
