@@ -278,24 +278,6 @@ export default function MapView() {
         paint: { 'line-color': '#94a3b8', 'line-width': 0.3 },
       });
 
-      // Re-paint water on top of the choropleth instead of rendering the
-      // choropleth below the style's own water layer: nation/council
-      // boundaries legitimately extend into tidal water in places, so
-      // putting the choropleth below water fixed estuaries but also put it
-      // below roads (which sit above water in this style), making roads
-      // draw over the polygons. Cloning water back on top keeps the
-      // choropleth above roads while still showing water correctly.
-      const waterLayer = map.getLayer('water');
-      if (waterLayer) {
-        map.addLayer({
-          id: 'water-mask',
-          type: 'fill',
-          source: waterLayer.source,
-          'source-layer': waterLayer['source-layer'] || waterLayer.sourceLayer,
-          paint: { 'fill-color': map.getPaintProperty('water', 'fill-color') || '#a0c8f0' },
-        });
-      }
-
       map.addLayer({
         id: 'clusters', type: 'circle', source: 'projects',
         minzoom: ZOOM_BREAKS.regionMax,
