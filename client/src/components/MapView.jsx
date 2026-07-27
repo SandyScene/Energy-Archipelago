@@ -208,7 +208,13 @@ export default function MapView() {
       map.addSource('nations', { type: 'geojson', data: EMPTY_FC });
       map.addSource('uk-countries', { type: 'geojson', data: EMPTY_FC });
       map.addSource('regions', { type: 'geojson', data: EMPTY_FC });
-      map.addSource('councils', { type: 'geojson', data: EMPTY_FC });
+      // tolerance: 0 disables geometry simplification — councils.geojson has
+      // ~350 small, densely-packed unitary authorities (much of England's
+      // small councils cluster tightly, e.g. the Midlands), and Mapbox's
+      // default simplification at this zoom band can visually blur adjacent
+      // boundaries together, making a 0-project council look like it's part
+      // of a neighbouring high-count one.
+      map.addSource('councils', { type: 'geojson', data: EMPTY_FC, tolerance: 0 });
       map.addSource('projects', {
         type: 'geojson',
         data: EMPTY_FC,
@@ -265,7 +271,7 @@ export default function MapView() {
       map.addLayer({
         id: 'councils-outline', type: 'line', source: 'councils',
         minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
-        paint: { 'line-color': '#4a5568', 'line-width': 0.5 },
+        paint: { 'line-color': '#4a5568', 'line-width': 1 },
       });
 
       map.addLayer({
