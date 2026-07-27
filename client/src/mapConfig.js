@@ -1,7 +1,7 @@
 export const ZOOM_BREAKS = {
-  nationMax: 5,
+  nationMax: 6.5,
   regionMax: 7,
-  councilMax: 8,
+  councilMax: 7.5,
 };
 
 export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;

@@ -331,27 +331,27 @@ export default function MapView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Manual override of the default zoom-driven display: "polygons" keeps the
-  // nation/region/council choropleth drill-down (extending councils to the
-  // top of the zoom range, since pins would otherwise take over there);
-  // "pins" shows clustered point markers at every zoom level instead.
+  // Manual override of the default zoom-driven display: "pins" is the
+  // normal nation/region/council choropleth drill-down handing off to
+  // clustered point markers at ZOOM_BREAKS.councilMax; "polygons" forces the
+  // choropleth at every zoom instead, extending councils to the top of the
+  // range so it never hands off to pins.
   useEffect(() => {
     if (!mapReady) return;
     const map = mapRef.current;
     if (!map) return;
 
-    const polygonLayers = ['nations-fill', 'nations-outline', 'regions-fill', 'regions-outline', 'councils-fill', 'councils-outline'];
     const pinLayers = ['clusters', 'cluster-count', 'unclustered-point'];
 
     if (viewMode === 'polygons') {
-      polygonLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'visible'));
       pinLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'none'));
       map.setLayerZoomRange('councils-fill', ZOOM_BREAKS.regionMax, 24);
       map.setLayerZoomRange('councils-outline', ZOOM_BREAKS.regionMax, 24);
     } else {
-      polygonLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'none'));
       pinLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'visible'));
-      pinLayers.forEach((id) => map.setLayerZoomRange(id, 0, 24));
+      pinLayers.forEach((id) => map.setLayerZoomRange(id, ZOOM_BREAKS.councilMax, 24));
+      map.setLayerZoomRange('councils-fill', ZOOM_BREAKS.regionMax, ZOOM_BREAKS.councilMax);
+      map.setLayerZoomRange('councils-outline', ZOOM_BREAKS.regionMax, ZOOM_BREAKS.councilMax);
     }
   }, [viewMode, mapReady]);
 
