@@ -352,11 +352,10 @@ export default function MapView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Manual override of the default zoom-driven display: "polygons" (the
-  // default) shows the nation/uk-country/region/council choropleth drill-down,
-  // handing off to clustered point markers at ZOOM_BREAKS.regionMax; "pins"
-  // overrides this to show pins at every zoom level instead, regardless of
-  // the choropleth breakpoints.
+  // "polygons" (default, toggle off) is the natural zoom-driven drill-down:
+  // nation -> uk-country -> region/council, handing off to clustered pins at
+  // ZOOM_BREAKS.regionMax. "pins" (toggle on) overrides this to force pins at
+  // every zoom level instead, hiding the choropleth entirely.
   useEffect(() => {
     if (!mapReady) return;
     const map = mapRef.current;
@@ -366,14 +365,15 @@ export default function MapView() {
     const pinLayers = ['clusters', 'cluster-count', 'unclustered-point'];
     const lastTierLayers = ['regions-fill', 'regions-outline', 'councils-fill', 'councils-outline'];
 
-    if (viewMode === 'polygons') {
-      polygonLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'visible'));
-      pinLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'none'));
-      lastTierLayers.forEach((id) => map.setLayerZoomRange(id, ZOOM_BREAKS.nationMax, 24));
-    } else {
+    if (viewMode === 'pins') {
       polygonLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'none'));
       pinLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'visible'));
       pinLayers.forEach((id) => map.setLayerZoomRange(id, 0, 24));
+    } else {
+      polygonLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'visible'));
+      pinLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'visible'));
+      pinLayers.forEach((id) => map.setLayerZoomRange(id, ZOOM_BREAKS.regionMax, 24));
+      lastTierLayers.forEach((id) => map.setLayerZoomRange(id, ZOOM_BREAKS.nationMax, ZOOM_BREAKS.regionMax));
     }
   }, [viewMode, mapReady]);
 
@@ -407,7 +407,7 @@ export default function MapView() {
         onClick={() => setViewMode(viewMode === 'pins' ? 'polygons' : 'pins')}
         aria-pressed={viewMode === 'pins'}
         aria-label="Toggle map pins"
-        title={viewMode === 'pins' ? 'Showing pins — click for polygons' : 'Showing polygons — click for pins'}
+        title={viewMode === 'pins' ? 'Always showing pins — click for default view' : 'Default view — click to always show pins'}
       >
         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" />
