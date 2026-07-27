@@ -147,9 +147,10 @@ export default function MapView() {
 
     async function loadAll(attempt = 0) {
       try {
-        const [projects, nations, regions, councils] = await Promise.all([
+        const [projects, nations, ukCountries, regions, councils] = await Promise.all([
           fetchProjects(filters),
           fetchAggregates('nation', filters),
+          fetchAggregates('uk-country', filters),
           fetchAggregates('region', filters),
           fetchAggregates('council', filters),
         ]);
@@ -158,6 +159,7 @@ export default function MapView() {
         if (!map) return;
         map.getSource('projects')?.setData(projectsToGeoJSON(projects));
         map.getSource('nations')?.setData(nations);
+        map.getSource('uk-countries')?.setData(ukCountries);
         map.getSource('regions')?.setData(regions);
         map.getSource('councils')?.setData(councils);
         setShowLoadingBar(false);
@@ -204,6 +206,7 @@ export default function MapView() {
       await loadPinIcons(map, TECHNOLOGY_COLORS);
 
       map.addSource('nations', { type: 'geojson', data: EMPTY_FC });
+      map.addSource('uk-countries', { type: 'geojson', data: EMPTY_FC });
       map.addSource('regions', { type: 'geojson', data: EMPTY_FC });
       map.addSource('councils', { type: 'geojson', data: EMPTY_FC });
       map.addSource('projects', {
@@ -225,6 +228,24 @@ export default function MapView() {
         paint: { 'line-color': '#4a5568', 'line-width': 0.5 },
       });
 
+      // UK-only: reveals England/Scotland/Wales/Northern Ireland in place of
+      // the single UK nation polygon for the tail end of the nation zoom
+      // range, rendered on top of nations-fill so it visually replaces it.
+      map.addLayer({
+        id: 'uk-countries-fill', type: 'fill', source: 'uk-countries',
+        minzoom: ZOOM_BREAKS.ukCountriesMin, maxzoom: ZOOM_BREAKS.nationMax,
+        paint: { 'fill-color': CHOROPLETH_FILL_COLOR, 'fill-opacity': CHOROPLETH_OPACITY },
+      });
+      map.addLayer({
+        id: 'uk-countries-outline', type: 'line', source: 'uk-countries',
+        minzoom: ZOOM_BREAKS.ukCountriesMin, maxzoom: ZOOM_BREAKS.nationMax,
+        paint: { 'line-color': '#4a5568', 'line-width': 0.5 },
+      });
+
+      // Regions (global admin-1 data) and councils (UK-only local authority
+      // areas) share the same zoom band rather than a sequential handoff —
+      // regions.geojson has no UK coverage and councils.geojson has nothing
+      // but UK, so exactly one of the two ever renders for a given point.
       map.addLayer({
         id: 'regions-fill', type: 'fill', source: 'regions',
         minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
@@ -238,18 +259,18 @@ export default function MapView() {
 
       map.addLayer({
         id: 'councils-fill', type: 'fill', source: 'councils',
-        minzoom: ZOOM_BREAKS.regionMax, maxzoom: ZOOM_BREAKS.councilMax,
+        minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
         paint: { 'fill-color': CHOROPLETH_FILL_COLOR, 'fill-opacity': CHOROPLETH_OPACITY },
       });
       map.addLayer({
         id: 'councils-outline', type: 'line', source: 'councils',
-        minzoom: ZOOM_BREAKS.regionMax, maxzoom: ZOOM_BREAKS.councilMax,
+        minzoom: ZOOM_BREAKS.nationMax, maxzoom: ZOOM_BREAKS.regionMax,
         paint: { 'line-color': '#4a5568', 'line-width': 0.5 },
       });
 
       map.addLayer({
         id: 'clusters', type: 'circle', source: 'projects',
-        minzoom: ZOOM_BREAKS.councilMax,
+        minzoom: ZOOM_BREAKS.regionMax,
         filter: ['has', 'point_count'],
         paint: {
           'circle-color': ['step', ['get', 'point_count'], '#8fd0aa', 10, '#39a86b', 50, '#0f7a45'],
@@ -260,7 +281,7 @@ export default function MapView() {
       });
       map.addLayer({
         id: 'cluster-count', type: 'symbol', source: 'projects',
-        minzoom: ZOOM_BREAKS.councilMax,
+        minzoom: ZOOM_BREAKS.regionMax,
         filter: ['has', 'point_count'],
         layout: {
           'text-field': ['get', 'point_count_abbreviated'],
@@ -271,7 +292,7 @@ export default function MapView() {
       });
       map.addLayer({
         id: 'unclustered-point', type: 'symbol', source: 'projects',
-        minzoom: ZOOM_BREAKS.councilMax,
+        minzoom: ZOOM_BREAKS.regionMax,
         filter: ['!', ['has', 'point_count']],
         layout: {
           'icon-image': TECHNOLOGY_ICON_EXPRESSION,
@@ -282,7 +303,7 @@ export default function MapView() {
         },
       });
 
-      ['nations-fill', 'regions-fill', 'councils-fill'].forEach((layerId) => {
+      ['nations-fill', 'uk-countries-fill', 'regions-fill', 'councils-fill'].forEach((layerId) => {
         map.on('mousemove', layerId, (e) => {
           map.getCanvas().style.cursor = 'pointer';
           const feature = e.features?.[0];
@@ -331,27 +352,28 @@ export default function MapView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Manual override of the default zoom-driven display: "pins" is the
-  // normal nation/region/council choropleth drill-down handing off to
-  // clustered point markers at ZOOM_BREAKS.councilMax; "polygons" forces the
-  // choropleth at every zoom instead, extending councils to the top of the
-  // range so it never hands off to pins.
+  // Manual override of the default zoom-driven display: "polygons" (the
+  // default) shows the nation/uk-country/region/council choropleth drill-down,
+  // handing off to clustered point markers at ZOOM_BREAKS.regionMax; "pins"
+  // overrides this to show pins at every zoom level instead, regardless of
+  // the choropleth breakpoints.
   useEffect(() => {
     if (!mapReady) return;
     const map = mapRef.current;
     if (!map) return;
 
+    const polygonLayers = ['nations-fill', 'nations-outline', 'uk-countries-fill', 'uk-countries-outline', 'regions-fill', 'regions-outline', 'councils-fill', 'councils-outline'];
     const pinLayers = ['clusters', 'cluster-count', 'unclustered-point'];
+    const lastTierLayers = ['regions-fill', 'regions-outline', 'councils-fill', 'councils-outline'];
 
     if (viewMode === 'polygons') {
+      polygonLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'visible'));
       pinLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'none'));
-      map.setLayerZoomRange('councils-fill', ZOOM_BREAKS.regionMax, 24);
-      map.setLayerZoomRange('councils-outline', ZOOM_BREAKS.regionMax, 24);
+      lastTierLayers.forEach((id) => map.setLayerZoomRange(id, ZOOM_BREAKS.nationMax, 24));
     } else {
+      polygonLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'none'));
       pinLayers.forEach((id) => map.setLayoutProperty(id, 'visibility', 'visible'));
-      pinLayers.forEach((id) => map.setLayerZoomRange(id, ZOOM_BREAKS.councilMax, 24));
-      map.setLayerZoomRange('councils-fill', ZOOM_BREAKS.regionMax, ZOOM_BREAKS.councilMax);
-      map.setLayerZoomRange('councils-outline', ZOOM_BREAKS.regionMax, ZOOM_BREAKS.councilMax);
+      pinLayers.forEach((id) => map.setLayerZoomRange(id, 0, 24));
     }
   }, [viewMode, mapReady]);
 

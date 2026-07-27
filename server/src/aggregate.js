@@ -7,6 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '..', 'data');
 
 const nations = JSON.parse(fs.readFileSync(path.join(dataDir, 'nations.geojson'), 'utf-8'));
+const ukCountries = JSON.parse(fs.readFileSync(path.join(dataDir, 'uk-countries.geojson'), 'utf-8'));
 const regions = JSON.parse(fs.readFileSync(path.join(dataDir, 'regions.geojson'), 'utf-8'));
 const councils = JSON.parse(fs.readFileSync(path.join(dataDir, 'councils.geojson'), 'utf-8'));
 
@@ -46,6 +47,7 @@ function withPartsIndex(collection) {
 }
 
 const nationsIndexed = withPartsIndex(nations);
+const ukCountriesIndexed = withPartsIndex(ukCountries);
 const regionsIndexed = withPartsIndex(regions);
 const councilsIndexed = withPartsIndex(councils);
 
@@ -166,6 +168,10 @@ function aggregateByBoundary(projects, { features, parts }) {
 
 export function aggregateNations(projects) {
   return aggregateByBoundary(projects, nationsIndexed);
+}
+
+export function aggregateUkCountries(projects) {
+  return aggregateByBoundary(projects, ukCountriesIndexed);
 }
 
 export function aggregateRegions(projects) {
