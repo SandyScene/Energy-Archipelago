@@ -278,6 +278,29 @@ export default function MapView() {
         paint: { 'line-color': '#94a3b8', 'line-width': 0.3 },
       });
 
+      // Re-paint water on top of the choropleth, but only up to regionMax —
+      // nation/council boundaries legitimately extend into tidal water in
+      // places, so the fill can wrongly colour an estuary. A previous
+      // attempt at this had no zoom cap and also re-drew every inland lake
+      // at every zoom, which covered bridges and lake-name labels that are
+      // meant to render on top of water. Capping it to the same zoom band
+      // the choropleth actually uses means it disappears once zoomed in
+      // past the polygon view, where those details start to matter — the
+      // "Polygons" toggle's extended range (past regionMax) is the one case
+      // that can still show a wrongly-coloured estuary, a smaller trade-off
+      // than the default view being affected.
+      const waterLayer = map.getLayer('water');
+      if (waterLayer) {
+        map.addLayer({
+          id: 'water-mask',
+          type: 'fill',
+          source: waterLayer.source,
+          'source-layer': waterLayer['source-layer'],
+          maxzoom: ZOOM_BREAKS.regionMax,
+          paint: { 'fill-color': map.getPaintProperty('water', 'fill-color') || '#a0c8f0' },
+        });
+      }
+
       map.addLayer({
         id: 'clusters', type: 'circle', source: 'projects',
         minzoom: ZOOM_BREAKS.regionMax,
@@ -423,6 +446,12 @@ export default function MapView() {
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z" />
         </svg>
       </button>
+
+      <div className="build-note">
+        <strong>Alpha Build v0.6</strong>
+        <br />
+        Data loading times may be up to 50 seconds
+      </div>
 
       {legendOpen ? (
         <div className="map-legend">
