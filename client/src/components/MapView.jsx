@@ -223,14 +223,23 @@ export default function MapView() {
         clusterRadius: 50,
       });
 
+      // Once uk-countries-fill takes over (zoom >= ukCountriesMin), stop drawing the
+      // UK nation polygon entirely rather than relying on uk-countries-fill to visually
+      // cover it. uk-countries.geojson's simplified coastline doesn't perfectly align
+      // with nations.geojson's — small gaps between the two let the UK nation polygon
+      // show through at those spots, displaying "United Kingdom" instead of the
+      // correct constituent country. With nothing underneath, a coastline gap just
+      // shows the base map instead of a wrongly-labelled polygon.
       map.addLayer({
         id: 'nations-fill', type: 'fill', source: 'nations',
         maxzoom: ZOOM_BREAKS.nationMax,
+        filter: ['any', ['<', ['zoom'], ZOOM_BREAKS.ukCountriesMin], ['!=', ['get', 'name'], 'United Kingdom']],
         paint: { 'fill-color': CHOROPLETH_FILL_COLOR, 'fill-opacity': CHOROPLETH_OPACITY },
       });
       map.addLayer({
         id: 'nations-outline', type: 'line', source: 'nations',
         maxzoom: ZOOM_BREAKS.nationMax,
+        filter: ['any', ['<', ['zoom'], ZOOM_BREAKS.ukCountriesMin], ['!=', ['get', 'name'], 'United Kingdom']],
         paint: { 'line-color': '#4a5568', 'line-width': 0.5 },
       });
 
