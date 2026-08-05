@@ -207,8 +207,18 @@ function importFile(filePath) {
     if (COLUMN_ALIASES[normalized]) headerMap[normalized] = COLUMN_ALIASES[normalized];
   }
 
-  const insertPlaceholders = COLUMNS.map(() => '?').join(', ');
-  const insert = db.prepare(`INSERT INTO projects (${COLUMNS.join(', ')}) VALUES (${insertPlaceholders})`);
+  // Insert with the spreadsheet's own id when it has one, rather than always letting
+  // SQLite autoincrement pick the next value. Autoincrement only tracks the highest
+  // rowid ever used in *this* table — it knows nothing about gaps in the spreadsheet's
+  // own numbering (from projects removed over time). Left to always autoincrement, a
+  // fresh import can drift out of sync with the spreadsheet's ids, so a later row's
+  // explicit id ends up coinciding with a value autoincrement just assigned to a
+  // different, earlier row — silently overwriting it via the "existing id" update path.
+  // Explicit ids are inserted as-is (also advancing autoincrement's tracked max so
+  // later blank-id rows never collide with them); blank ids still autoincrement normally.
+  const insertColumns = ['id', ...COLUMNS];
+  const insertPlaceholders = insertColumns.map(() => '?').join(', ');
+  const insert = db.prepare(`INSERT INTO projects (${insertColumns.join(', ')}) VALUES (${insertPlaceholders})`);
   const update = db.prepare(`UPDATE projects SET ${COLUMNS.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`);
   const existsStmt = db.prepare(`SELECT id FROM projects WHERE id = ?`);
 
@@ -217,13 +227,47 @@ function importFile(filePath) {
   let skipped = 0;
   const newIds = [];
 
+  const validRows = [];
   for (const rawRow of rawRows) {
     const row = mapRow(rawRow, headerMap);
     if (!row.project_name || row.latitude == null || row.longitude == null || Number.isNaN(row.latitude) || Number.isNaN(row.longitude)) {
       skipped += 1;
       continue;
     }
+    validRows.push(row);
+  }
 
+  // Blank ids can be scattered throughout the file rather than only at the end, so
+  // process every explicit id first — establishing them all at their real, fixed
+  // positions — before touching a single blank one. Otherwise a blank-id row
+  // processed early could grab a low autoincrement value that a not-yet-seen
+  // explicit-id row later in the file also needs, causing the exact collision
+  // this two-pass split exists to prevent.
+  const explicitIdRows = validRows.filter((row) => row.id != null && !Number.isNaN(row.id));
+  const blankIdRows = validRows.filter((row) => row.id == null || Number.isNaN(row.id));
+
+  // A single id legitimately appearing once per import is a normal "update this
+  // project" reference. The *same file* carrying that id on two+ rows is always a
+  // data error, never an intentional re-update — and those rows are often genuinely
+  // different projects (e.g. one organisation's separate solar/wind/hydro sites
+  // that ended up sharing an id upstream). Silently letting the last one win would
+  // overwrite and permanently discard the earlier ones. Only the first occurrence
+  // keeps its id; later occurrences fall through to the blank-id/autoincrement path
+  // so every distinct row survives as its own record.
+  const seenIds = new Set();
+  const reassigned = [];
+  for (const row of explicitIdRows) {
+    if (seenIds.has(row.id)) {
+      reassigned.push({ id: row.id, name: row.project_name });
+      blankIdRows.push(row);
+      row.id = null;
+    } else {
+      seenIds.add(row.id);
+    }
+  }
+  const dedupedExplicitIdRows = explicitIdRows.filter((row) => row.id != null);
+
+  function processRow(row) {
     const values = COLUMNS.map((col) => row[col] ?? null);
     const existing = row.id != null && !Number.isNaN(row.id) ? existsStmt.get(row.id) : null;
 
@@ -231,13 +275,21 @@ function importFile(filePath) {
       update.run(...values, row.id);
       updated += 1;
     } else {
-      const result = insert.run(...values);
+      const insertId = row.id != null && !Number.isNaN(row.id) ? row.id : null;
+      const result = insert.run(insertId, ...values);
       inserted += 1;
       newIds.push({ id: result.lastInsertRowid, name: row.project_name });
     }
   }
 
+  dedupedExplicitIdRows.forEach(processRow);
+  blankIdRows.forEach(processRow);
+
   console.log(`"${sheetName}": ${inserted} inserted, ${updated} updated, ${skipped} skipped (missing name/latitude/longitude).`);
+  if (reassigned.length) {
+    console.log(`\n${reassigned.length} row(s) shared an id with an earlier row in this file (likely distinct projects mistakenly given the same id upstream) — reassigned a fresh id instead of overwriting:`);
+    reassigned.forEach(({ id, name }) => console.log(`  was ${id}\t${name}`));
+  }
   if (newIds.length) {
     console.log('\nNew IDs (copy these back into the master spreadsheet\'s ID column):');
     newIds.forEach(({ id, name }) => console.log(`  ${id}\t${name}`));
